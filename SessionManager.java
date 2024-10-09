@@ -55,7 +55,7 @@ public class SessionManager {
     }
 
     // Get a list of all class names
-    public Set<String> getAllClassNames() {
+    public Set<String> getAllNamesOfClasses() {
         return sessions.keySet();  // Returns all class names
     }
 }
