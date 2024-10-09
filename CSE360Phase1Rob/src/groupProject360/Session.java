@@ -1,9 +1,13 @@
 package groupProject360;
 
-import java.util.HashMap;
-import java.util.ArrayList;
+//import java.util.HashMap;
+
+//import java.util.ArrayList;
+
 import java.util.Set;
-import java.util.HashSet;
+
+//import java.util.HashSet;
+
 /***
  * 
  * <p> Session </p>
@@ -32,9 +36,13 @@ public class Session {
 	 * @param names
 	 * @param admins
 	 */
-	public static void Session(String names, User admins) {
-		String name = names;
-		User admin = admins;
+	/*public void Session(String namess, User admins) {
+		
+	}*/
+	
+	public Session(String namess, User admins) {
+		this.name = namess;
+		this.admin = admins;
 	}
 	/**
 	 * this class adds students to the Set of students.
