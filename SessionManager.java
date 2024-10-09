@@ -28,20 +28,30 @@ public class SessionManager {
 
     // Enroll a student in a class
     public boolean enrollStudent(String className, User student) {
-        Session enrollClass = sessions.get(className);
-        if (enrollClass != null) {
-            return enrollClass.addStudent(student);
+        
+        Session enrollClass = sessions.get(className); //Get the classes
+
+        //Class was not found
+        if (enrollClass == null) {
+            return false;
         }
-        return false;  // Class not found
+
+        //Enroll the student
+        return enrollClass.addStudent(student); 
     }
 
     // Unenroll a student from a class
     public boolean unenrollStudent(String className, User student) {
-        Session unenrollClass = sessions.get(className);
-        if (unenrollClass != null) {
-            return unenrollClass.removeStudent(student);
+        
+        Session unenrollClass = sessions.get(className); //Get the classes
+
+        //Class was not found
+        if (unenrollClass == null) {
+            return false;
         }
-        return false;  // Class not found
+        
+        unenrollClass.removeStudent(student);  //Unenroll the student
+        return true;
     }
 
     // Get a list of all class names
