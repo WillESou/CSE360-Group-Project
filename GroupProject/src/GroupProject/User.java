@@ -8,9 +8,6 @@ import java.util.HashSet;
  * User Class
  * 
  * A class to hold information on a specific user.
- * 
- * PLEASE FINISH :)
- * Also we will either need to add getters for the private variables or make them public so their data can be accessed.
  */
 
 public class User {
@@ -38,6 +35,7 @@ public class User {
 	private char password[];
 	private Set<Role> roles;
 	private HashMap<String, SkillLevel> skills;
+	private ClassManager manager;
 	
 	// Constructor class to set variables for a new User
 	public User(String newUsername, String newEmail, String newName, String newPassword) {
@@ -54,6 +52,7 @@ public class User {
 		
 		roles = new HashSet<>();
 		skills = new HashMap<String, SkillLevel>();
+		manager = new ClassManager();
 	}
 	
 	// Setter function for a user's Roles. Can only add one at a time
@@ -107,24 +106,18 @@ public class User {
 		return tempPass.equals(this.password);
 	}
 	
-	// TO BE FINISHED
-	//
-	//
 	public boolean createSession(String sessionName) {
 		
-//		Session newClass = new Session(className, this);
-		return true;
+		return manager.createClass(sessionName, this);
 	}
 	
 	public boolean enrollInSession(String sessionName) {
 		
-//		
-		return true;
+		return manager.enrollStudent(sessionName, this);
 	}
 	
 	public boolean unenrollFromSession(String sessionName) {
 		
-//		
-		return true;
+		return manager.unenrollStudent(sessionName, this);
 	}
 }
