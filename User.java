@@ -90,6 +90,10 @@ public class User {
 		return skills.get(topic);
 	}
 	
+	
+	
+	
+	
 	// Currently unused function. Will eventually encode the password associated with the user
 	private String hashPassword(String password) {
 		return "";
