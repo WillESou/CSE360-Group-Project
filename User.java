@@ -15,28 +15,29 @@ import java.util.HashSet;
 public class User {
 	
 	// Enumeration to define the different Roles a user can have
-	enum Role{
+	enum ROLE{
 		ADMIN,
 		STUDENT,
 		INSTRUCTOR
 	}
 	
 	// Enumeration to define the possible skill levels a user can have on a subject
-	enum SkillLevel{
+	enum SKILLLEVEL{
 		BEGINNER,
 		INTERMEDIATE,
 		ADVANCED
 	}
 
 	// User attributes
-	private String username;
-	private String email;
-	private String name;
+	public String username;
+	public String email;
+	public String name;
+	public String prefName; // ADD
 	
 	// Because the password must be protected, it will be stored in a char array instead of a String
 	private char password[];
-	private Set<Role> roles;
-	private HashMap<String, SkillLevel> skills;
+	public Set<ROLE> roles;
+	private HashMap<String, SKILLLEVEL> skills;
 	
 	// Constructor class to set variables for a new User
 	public User(String newUsername, String newEmail, String newName, String newPassword) {
@@ -52,16 +53,16 @@ public class User {
 		}
 		
 		roles = new HashSet<>();
-		skills = new HashMap<String, SkillLevel>();
+		skills = new HashMap<String, SKILLLEVEL>();
 	}
 	
 	// Setter function for a user's Roles. Can only add one at a time
-	public void addRole(Role role) {
-			roles.add(role);
+	public void addRole(ROLE role) {
+		roles.add(role);
 	}
 	
 	// Function to remove a user's Role, if it already contains it
-	public void removeRole(Role role) {
+	public void removeRole(ROLE role) {
 		
 		if (!roles.remove(role)) {
 			// Placeholder print message if user does not have the role to remove
@@ -70,12 +71,12 @@ public class User {
 	}
 	
 	// Function to return whether a user has a specific role
-	public boolean hasRole(Role role) {
+	public boolean hasRole(ROLE role) {
 		return roles.contains(role);
 	}
 	
 	// Setter function to add or replace the skill level of a certain topic
-	public void setSkillLevel(String topic, SkillLevel level) {
+	public void setSkillLevel(String topic, SKILLLEVEL level) {
 		
 		if (skills.containsKey(topic)) {
 			skills.replace(topic, level);
@@ -85,14 +86,10 @@ public class User {
 	}
 	
 	// Function to return the skill level associated with the skill's topic
-	public SkillLevel getSkillLevel(String topic) {
+	public SKILLLEVEL getSkillLevel(String topic) {
 		
 		return skills.get(topic);
 	}
-	
-	
-	
-	
 	
 	// Currently unused function. Will eventually encode the password associated with the user
 	private String hashPassword(String password) {

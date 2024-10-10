@@ -1,5 +1,8 @@
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -52,6 +55,23 @@ public class UserManager {
     }
     
     // Update operation
+    public void updateUser(String username, String newEmail, String newPassword,String newName) throws SQLException {
+        String sql = "UPDATE USERS SET EMAIL = ?, NAME = ?, PASSWORD = ? WHERE USERNAME = ?";
+        try (Connection conn = databaseInterface.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, newEmail);
+            pstmt.setString(2, newName);
+            pstmt.setString(3, newPassword);
+            pstmt.setString(4, username);
+            
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows == 0) {
+                throw new SQLException("Updating user failed, no rows affected.");
+            }
+            System.out.println("User updated sucessfully");
+        }
+    }
+    
     public void updateUser(String username, String newEmail, String newName) throws SQLException {
         String sql = "UPDATE USERS SET EMAIL = ?, NAME = ? WHERE USERNAME = ?";
         try (Connection conn = databaseInterface.getConnection();
@@ -59,7 +79,7 @@ public class UserManager {
             pstmt.setString(1, newEmail);
             pstmt.setString(2, newName);
             pstmt.setString(3, username);
-            
+
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows == 0) {
                 throw new SQLException("Updating user failed, no rows affected.");
@@ -70,14 +90,46 @@ public class UserManager {
     
     // Delete operation
     public void deleteUser(String username) throws SQLException {
-        String sql = "DELETE FROM USERS WHERE USERNAME = ?";
-        try (Connection conn = databaseInterface.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, username);
-            
-            int affectedRows = pstmt.executeUpdate();
-            if (affectedRows == 0) {
-                throw new SQLException("Deleting user failed, no rows affected.");
+        Connection conn = null;
+        try {
+            conn = databaseInterface.getConnection();
+            conn.setAutoCommit(false);  // Start transaction
+
+            // First, delete the user's roles
+            String deleteRolesSql = "DELETE FROM USER_ROLES WHERE USER_ID = (SELECT ID FROM USERS WHERE USERNAME = ?)";
+            try (PreparedStatement pstmt = conn.prepareStatement(deleteRolesSql)) {
+                pstmt.setString(1, username);
+                pstmt.executeUpdate();
+            }
+
+            // Then, delete the user
+            String deleteUserSql = "DELETE FROM USERS WHERE USERNAME = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(deleteUserSql)) {
+                pstmt.setString(1, username);
+                int affectedRows = pstmt.executeUpdate();
+                if (affectedRows == 0) {
+                    throw new SQLException("Deleting user failed, no user found with username: " + username);
+                }
+            }
+
+            conn.commit();  // Commit transaction
+            System.out.println("User deleted successfully.");
+        } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();  // Rollback transaction on error
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            throw e;
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);  // Reset to default
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -98,6 +150,50 @@ public class UserManager {
                 throw new SQLException("Assigning role to user failed, no rows affected.");
             }
         }
+    }
+    
+    public boolean removeRoleFromUser(String username, String roleName) throws SQLException {
+        String sql = "DELETE FROM USER_ROLES " +
+                     "WHERE USER_ID = (SELECT ID FROM USERS WHERE USERNAME = ?) " +
+                     "AND ROLE_ID = (SELECT ID FROM ROLES WHERE ROLE_NAME = ?)";
+        
+        try (PreparedStatement pstmt = databaseInterface.getConnection().prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            pstmt.setString(2, roleName);
+            
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows > 0) {
+                System.out.println("Role '" + roleName + "' removed from user '" + username + "'");
+                return true;
+            } else {
+                System.out.println("No role '" + roleName + "' found for user '" + username + "' or user not found");
+                return false;
+            }
+        }
+    }
+    
+    
+    //method to get user roles by username
+    public List<String> getRolesByUsername(String username) throws SQLException {
+        String sql = "SELECT R.ROLE_NAME " +
+                     "FROM USERS U " +
+                     "JOIN USER_ROLES UR ON U.ID = UR.USER_ID " +
+                     "JOIN ROLES R ON UR.ROLE_ID = R.ID " +
+                     "WHERE U.USERNAME = ?";
+        
+        List<String> roles = new ArrayList<>();
+        
+        try (PreparedStatement pstmt = databaseInterface.getConnection().prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    roles.add(rs.getString("ROLE_NAME"));
+                }
+            }
+        }
+        
+        return roles;
     }
     
     public ArrayList<User> getAllUsers() throws SQLException {

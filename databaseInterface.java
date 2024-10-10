@@ -1,4 +1,19 @@
+/***
+ * 
+ * <p> databaseInterface </p>
+ * 
+ * <p> Description: TODO.</p>
+ * 
+ * 
+ * @author William Sou
+ * 
+ * @version 1.00	2024-10-18
+ * 
+ */
 
+/**
+ * TODO
+ */
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -61,8 +76,8 @@ public class databaseInterface {
         String sql = "CREATE TABLE IF NOT EXISTS USERS (" +
                      "ID INT AUTO_INCREMENT PRIMARY KEY, " +
                      "USERNAME VARCHAR(50) NOT NULL UNIQUE, " +
-                     "EMAIL VARCHAR(100) NOT NULL UNIQUE, " +
-                     "NAME VARCHAR(100) NOT NULL, " +
+                     "EMAIL VARCHAR(100) UNIQUE, " +
+                     "NAME VARCHAR(100), " +
                      "PASSWORD VARCHAR(64) NOT NULL" +  // Assuming SHA-256 hash
                      ")";
         executeUpdate(conn, sql, "USERS table");
