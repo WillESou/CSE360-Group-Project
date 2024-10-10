@@ -10,15 +10,18 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
 
 public class Source extends Application{
-	static Set<User> users = new HashSet<>();
 	static User genericAdmin = new User("admin", "admin@asu.edu", "Joe", "pass123");
-	
-	public static void main(String[] args) {
-		users.add(genericAdmin);
+	static UserManager userMan = new UserManager();
+	public static void main(String[] args) throws SQLException {
+		databaseInterface db = new databaseInterface();
+		
+		
+		userMan.createUser("admin", "admin@asu.edu", "Joe", "pass123");
 		launch(args);
     }	
     
@@ -39,17 +42,15 @@ public class Source extends Application{
                String pass = passwordField.getText();
                System.out.println("Username is " + user);
                System.out.println("Password is " + pass);
-               for(User i : users)
-               {
-            	   if(i.verifyUsername(user))
-            	   {
-            		   System.out.println("Username verifed!");
-            		   if(i.verifyPassword(pass))
-            		   {
-            			   System.out.println("LOGIN SUCCESSFUL!");
-            		   }
-            	   }
-               }
+               try {
+				User attempt = userMan.getUserByUsername(user);
+				if(attempt.verifyPassword(pass))
+				{
+					System.out.println("LOGIN SUCCESSFUL");
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
             }
         });
         /*
