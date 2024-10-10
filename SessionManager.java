@@ -28,7 +28,7 @@ public class SessionManager {
 
     // Enroll a student in a class
     public boolean enrollStudent(String className, User student) {
-<<<<<<< HEAD
+
         
         Session enrollClass = sessions.get(className); //Get the classes
 
@@ -39,18 +39,12 @@ public class SessionManager {
 
         //Enroll the student
         return enrollClass.addStudent(student); 
-=======
-        Session enrollClass = sessions.get(className);
-        if (enrollClass != null) {
-            return enrollClass.addStudent(student);
-        }
-        return false;  // Class not found
->>>>>>> de3005a (Initial commit)
+
     }
 
     // Unenroll a student from a class
     public boolean unenrollStudent(String className, User student) {
-<<<<<<< HEAD
+
         
         Session unenrollClass = sessions.get(className); //Get the classes
 
@@ -63,19 +57,10 @@ public class SessionManager {
         return true;
     }
 
-    // Get a list of all class names
-    public Set<String> getAllNamesOfClasses() {
-=======
-        Session unenrollClass = sessions.get(className);
-        if (unenrollClass != null) {
-            return unenrollClass.removeStudent(student);
-        }
-        return false;  // Class not found
-    }
 
     // Get a list of all class names
     public Set<String> getAllClassNames() {
->>>>>>> de3005a (Initial commit)
+
         return sessions.keySet();  // Returns all class names
     }
 }
