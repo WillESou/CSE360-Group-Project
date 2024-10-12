@@ -44,8 +44,7 @@ public class UserManager {
                     return new User(
                         rs.getString("USERNAME"),
                         rs.getString("EMAIL"),
-                        rs.getString("NAME"),
-                        rs.getString("Password")
+                        rs.getString("NAME")
                     );
                 } else {
                     return null; // User not found
@@ -53,6 +52,43 @@ public class UserManager {
             }
         }
     }
+    
+    
+    
+    //Takes a username string and password string, then queries the database to try to find exactly one match.
+    public boolean checkPassword(String username, String password) throws SQLException {
+    	String sql = "SELECT COUNT(*) FROM USERS WHERE USERNAME = ? AND PASSWORD = ?";
+    	try(Connection conn = databaseInterface.getConnection();
+    			PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    		pstmt.setString(1, username);
+    		pstmt.setString(2, password);
+    		
+    		try (ResultSet rs = pstmt.executeQuery()) {
+    			if(rs.next()) {
+    				int count = rs.getInt(1);
+    				if(count == 1){
+        				System.out.println("LOGIN SUCCESS");
+        				return true;
+        			}
+        			if(count == 0){
+        				System.out.println("LOGIN FAILED");
+        				return false;
+        			} else {
+        				System.out.println("LOGIN ATTEMPTED BUT MULTIPLE MATCHING USERS FOUND");
+        				return false;
+        			}
+    			}
+    			else
+    			{
+    				System.out.println("LOGIN ATTEMPTED BUT UserManager::checkPassword FAILED");
+    				return false;
+    			}
+    			
+    		}
+    	}
+    	
+    }
+    
     
     // Update operation
     public void updateUser(String username, String newEmail, String newPassword,String newName) throws SQLException {
@@ -206,8 +242,7 @@ public class UserManager {
                 users.add(new User(
                     rs.getString("USERNAME"),
                     rs.getString("EMAIL"),
-                    rs.getString("NAME"),
-                    rs.getString("Password")
+                    rs.getString("NAME")
                 ));
             }
         }
