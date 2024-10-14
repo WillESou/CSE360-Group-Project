@@ -1,7 +1,9 @@
+package core;
 
 import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.List;
 
 /**
  * User Class
@@ -39,6 +41,30 @@ public class User {
 		this.name = name;
 	}
 	
+	//Overloaded contructor
+	User(String username, String email, String name, List<String> roles){
+		this.username = username;
+		this.email = email;
+		this.name = name;
+		
+		
+		for(String s : roles) {
+			switch(s){
+			case "ADMIN":
+				addRole(ROLE.ADMIN);
+				break;
+			case "INSTRUCTOR":
+				addRole(ROLE.INSTRUCTOR);
+				break;
+			case "STUDENT":
+				addRole(ROLE.STUDENT);
+				break;
+			}
+		}
+		
+		
+	}
+	
 	
 	//Getters
 	public String getUsername() {
@@ -61,6 +87,9 @@ public class User {
 		return this.roles;
 	}
 	
+	public boolean hasChanged() {
+		return changed;
+	}
 	// Function to return the skill level associated with the skill's topic
 	public SKILLLEVEL getSkillLevel(String topic) {
 		return skills.get(topic);

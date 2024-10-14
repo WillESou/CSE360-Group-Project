@@ -1,6 +1,10 @@
+package ui;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+import core.Source;
+import core.User;
+import core.UserManager;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;

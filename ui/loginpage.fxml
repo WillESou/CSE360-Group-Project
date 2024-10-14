@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.effect.Blend?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.Pane?>
+
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: #6BB3E3;" xmlns="http://javafx.com/javafx/23" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.LoginPageController">
+    <children>
+        <Pane layoutX="200.0" layoutY="100.0" prefHeight="200.0" prefWidth="200.0" style="-fx-background-color: #F2F7FF;">
+            <children>
+                <TextField fx:id="usernameField" layoutX="20.0" layoutY="36.0" promptText="Username" />
+                <PasswordField fx:id="passwordField" layoutX="20.0" layoutY="75.0" promptText="Password" />
+                <Button fx:id="loginButton" layoutX="20.0" layoutY="119.0" mnemonicParsing="false" onAction="#handleLogin" prefHeight="26.0" prefWidth="159.0" text="Login" textOverrun="CENTER_ELLIPSIS">
+                    <effect>
+                        <Blend />
+                    </effect>
+                </Button>
+            </children>
+        </Pane>
+        <Label fx:id="messageLabel" layoutX="14.0" layoutY="14.0" prefHeight="26.0" prefWidth="225.0" text="CORNY MESSAGE GOES HERE" />
+        <Button fx:id="inviteCodeButton" layoutX="459.0" layoutY="360.0" mnemonicParsing="false" onAction="#handleInviteCode" text="I have an invite code" />
+    </children>
+</AnchorPane>

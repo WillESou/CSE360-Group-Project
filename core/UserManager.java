@@ -1,3 +1,4 @@
+package core;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,7 +45,8 @@ public class UserManager {
                     return new User(
                         rs.getString("USERNAME"),
                         rs.getString("EMAIL"),
-                        rs.getString("NAME")
+                        rs.getString("NAME"),
+                        getRolesByUsername(username)
                     );
                 } else {
                     return null; // User not found

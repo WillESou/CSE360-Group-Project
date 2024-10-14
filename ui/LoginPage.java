@@ -1,9 +1,14 @@
+package ui;
 
 
 
 
 import java.sql.SQLException;
 
+import core.ROLE;
+import core.Source;
+import core.User;
+import core.UserManager;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;

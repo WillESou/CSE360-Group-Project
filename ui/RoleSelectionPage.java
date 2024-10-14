@@ -1,6 +1,10 @@
+package ui;
 
 
 import javafx.scene.control.Label;
+import core.ROLE;
+import core.Source;
+import core.User;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.layout.VBox;
