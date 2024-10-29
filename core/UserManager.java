@@ -14,7 +14,7 @@ import java.sql.Statement;
 public class UserManager {
 	// Create operation
     public void createUser(String username, String email, String name, String password) throws SQLException {
-        String sql = "INSERT INTO USERS (USERNAME, EMAIL, NAME, PASSWORD) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO USERS (USERNAME, EMAIL, FIRSTNAME, PASSWORD) VALUES (?, ?, ?, ?)";
         try (Connection conn = databaseInterface.getConnection();
         	PreparedStatement pstmt = conn.prepareStatement(sql)){
         		pstmt.setString(1, username);
@@ -45,7 +45,10 @@ public class UserManager {
                     return new User(
                         rs.getString("USERNAME"),
                         rs.getString("EMAIL"),
-                        rs.getString("NAME"),
+                        rs.getString("FIRSTNAME"),
+                        rs.getString("MIDDLENAME"),
+                        rs.getString("LASTNAME"),
+                        rs.getString("PREFERREDNAME"),
                         getRolesByUsername(username)
                     );
                 } else {
@@ -55,7 +58,21 @@ public class UserManager {
         }
     }
     
-    
+    //Takes a username and checks if it already exists in the database
+    public boolean usernameExists(String username) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM USERS WHERE USERNAME = ?";
+        try (Connection conn = databaseInterface.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+                return false;
+            }
+        }
+    }
     
     //Takes a username string and password string, then queries the database to try to find exactly one match.
     public boolean checkPassword(String username, String password) throws SQLException {
@@ -125,6 +142,28 @@ public class UserManager {
             System.out.println("User updated sucessfully");
         }
     }
+    
+    public void updateUser(String username, String firstName, String middleName, String lastName, String preferredName, String email) throws SQLException {
+    	String sql = "UPDATE USERS SET FIRSTNAME = ?, MIDDLENAME = ?, LASTNAME = ?, PREFERREDNAME = ?, EMAIL = ? WHERE USERNAME = ?";
+        try (Connection conn = databaseInterface.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, firstName);
+            pstmt.setString(2, middleName);
+            pstmt.setString(3, lastName);
+            pstmt.setString(4, preferredName);
+            pstmt.setString(5, email);
+            pstmt.setString(6, username);
+            System.out.println("EXECUTING - " + pstmt.toString());
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows == 0) {
+                throw new SQLException("Updating user failed, no rows affected.");
+            }
+            System.out.println("User updated sucessfully");
+        }
+    	
+    	
+    }
+    
     
     // Delete operation
     public void deleteUser(String username) throws SQLException {
@@ -244,7 +283,7 @@ public class UserManager {
                 users.add(new User(
                     rs.getString("USERNAME"),
                     rs.getString("EMAIL"),
-                    rs.getString("NAME")
+                    rs.getString("FIRSTNAME")
                 ));
             }
         }

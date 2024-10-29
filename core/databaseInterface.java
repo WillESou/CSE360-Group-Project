@@ -58,7 +58,7 @@ public class databaseInterface {
 			createUserRolesTable(connection);
             createSkillsTable(connection);
             createUserSkillsTable(connection);
-            
+            createInviteCodesTable(connection);
             
             //Creating session tables
             createSessionTable(connection);
@@ -79,7 +79,10 @@ public class databaseInterface {
                      "ID INT AUTO_INCREMENT PRIMARY KEY, " +
                      "USERNAME VARCHAR(50) NOT NULL UNIQUE, " +
                      "EMAIL VARCHAR(100) UNIQUE, " +
-                     "NAME VARCHAR(100), " +
+                     "FIRSTNAME VARCHAR(100), " +
+                     "MIDDLENAME VARCHAR(100)," +
+                     "LASTNAME VARCHAR(100), " +
+                     "PREFERREDNAME VARCHAR(100)," +
                      "PASSWORD VARCHAR(64) NOT NULL" +  // Assuming SHA-256 hash
                      ")";
         executeUpdate(conn, sql, "USERS table");
@@ -148,6 +151,16 @@ public class databaseInterface {
         executeUpdate(conn, sql, "USER_SKILLS table");
     }
     
+    
+    //CREATING TABLE THAT TRACKS INVITE CODES
+    private void createInviteCodesTable(Connection conn) throws SQLException {
+        String sql = "CREATE TABLE IF NOT EXISTS INVITE_CODES (" +
+                     "CODE VARCHAR(16) PRIMARY KEY, " +
+                     "ROLE VARCHAR(20) NOT NULL, " +  // The role this invite code grants
+                     "CREATED_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                     ")";
+        executeUpdate(conn, sql, "INVITE_CODES table");
+    }
     
     private void createSessionTable(Connection conn) throws SQLException {
         String sql = "CREATE TABLE IF NOT EXISTS SESSIONS (" +
