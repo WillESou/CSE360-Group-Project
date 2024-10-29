@@ -66,11 +66,29 @@ public class UIManager {
 	}
 	
 	public void loadUserPage() {
-		
+		Parent root;
+		try {
+			root = FXMLLoader.load(getClass().getResource("/ui/userpage.fxml"));
+			Scene scene = new Scene(root);
+			Source.getPrimaryStage().setScene(scene);
+			Source.getPrimaryStage().show();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public void loadInstructorPage() {
-		
+		Parent root;
+		try {
+			root = FXMLLoader.load(getClass().getResource("/ui/instructorpage.fxml"));
+			Scene scene = new Scene(root);
+			Source.getPrimaryStage().setScene(scene);
+			Source.getPrimaryStage().show();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	
