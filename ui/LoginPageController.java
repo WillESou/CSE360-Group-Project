@@ -1,6 +1,11 @@
 package ui;
 
 import java.sql.SQLException;
+import java.text.ParseException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 import core.ROLE;
 import core.Source;
@@ -14,6 +19,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
@@ -162,7 +168,52 @@ public class LoginPageController {
 					Source.getUIManager().loadRoleSelectionPage();
 				}
 				
-				
+				if (loggedInUser.getFirstName() == "") {
+					DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd MM yyyy");
+					try {
+				        LocalDate dateTime = LocalDate.parse(loggedInUser.getEmail(), dateFormat);
+				        
+				        if (dateTime.isBefore(LocalDate.now())){
+				        	userMan.deleteUser(loggedInUser.getUsername());
+				        	return;
+				        } else {
+				        	
+				        	Dialog<ButtonType> dialog = new Dialog<>();
+				            dialog.setTitle("Set Up Password");
+				            dialog.setHeaderText("Set New Password:");
+
+				            // Create the content for the dialog
+				            VBox content = new VBox(10);
+				            content.setPadding(new Insets(10));
+				            content.setAlignment(Pos.CENTER);
+				            
+				            TextField newPass = new TextField();
+				            
+				            content.getChildren().addAll(
+				                newPass
+				            );
+
+				            // Set the content and add buttons
+				            dialog.getDialogPane().setContent(content);
+				            dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+				            // Show the dialog and handle the result
+				            dialog.showAndWait().ifPresent(buttonType -> {
+				                if (buttonType == ButtonType.OK) {
+				                	try {
+										userMan.updatePassword(loggedInUser.getUsername(), newPass.getText());
+										System.out.println(newPass.getText());
+										userMan.updateUser(username, null, null, null, null, null);
+									} catch (SQLException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+									}
+				                }
+				            });
+		                }
+			        } catch (DateTimeParseException dtpe) {
+			        }
+				}
 				
 				// OLD
 				//RoleSelectionPage roleSelectionPage = new RoleSelectionPage(loggedInUser);
