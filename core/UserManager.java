@@ -1,3 +1,4 @@
+package core;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,12 +9,14 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-
+import core.databaseInterface;
 
 public class UserManager {
+	private databaseInterface dbInterface;
+	
 	// Create operation
     public void createUser(String username, String email, String name, String password) throws SQLException {
-        String sql = "INSERT INTO USERS (USERNAME, EMAIL, NAME, PASSWORD) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO USERS (USERNAME, EMAIL, FIRSTNAME, PASSWORD) VALUES (?, ?, ?, ?)";
         try (Connection conn = databaseInterface.getConnection();
         	PreparedStatement pstmt = conn.prepareStatement(sql)){
         		pstmt.setString(1, username);
@@ -44,8 +47,11 @@ public class UserManager {
                     return new User(
                         rs.getString("USERNAME"),
                         rs.getString("EMAIL"),
-                        rs.getString("NAME"),
-                        rs.getString("Password")
+                        rs.getString("FIRSTNAME"),
+                        rs.getString("MIDDLENAME"),
+                        rs.getString("LASTNAME"),
+                        rs.getString("PREFERREDNAME"),
+                        getRolesByUsername(username)
                     );
                 } else {
                     return null; // User not found
@@ -53,6 +59,57 @@ public class UserManager {
             }
         }
     }
+    
+    //Takes a username and checks if it already exists in the database
+    public boolean usernameExists(String username) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM USERS WHERE USERNAME = ?";
+        try (Connection conn = databaseInterface.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+                return false;
+            }
+        }
+    }
+    
+    //Takes a username string and password string, then queries the database to try to find exactly one match.
+    public boolean checkPassword(String username, String password) throws SQLException {
+    	String sql = "SELECT COUNT(*) FROM USERS WHERE USERNAME = ? AND PASSWORD = ?";
+    	try(Connection conn = databaseInterface.getConnection();
+    			PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    		pstmt.setString(1, username);
+    		pstmt.setString(2, password);
+    		
+    		try (ResultSet rs = pstmt.executeQuery()) {
+    			if(rs.next()) {
+    				int count = rs.getInt(1);
+    				if(count == 1){
+        				System.out.println("LOGIN SUCCESS");
+        				return true;
+        			}
+        			if(count == 0){
+        				System.out.println("LOGIN FAILED");
+        				return false;
+        			} else {
+        				System.out.println("LOGIN ATTEMPTED BUT MULTIPLE MATCHING USERS FOUND");
+        				return false;
+        			}
+    			}
+    			else
+    			{
+    				System.out.println("LOGIN ATTEMPTED BUT UserManager::checkPassword FAILED");
+    				return false;
+    			}
+    			
+    		}
+    	}
+    	
+    }
+    
     
     // Update operation
     public void updateUser(String username, String newEmail, String newPassword,String newName) throws SQLException {
@@ -87,6 +144,28 @@ public class UserManager {
             System.out.println("User updated sucessfully");
         }
     }
+    
+    public void updateUser(String username, String firstName, String middleName, String lastName, String preferredName, String email) throws SQLException {
+    	String sql = "UPDATE USERS SET FIRSTNAME = ?, MIDDLENAME = ?, LASTNAME = ?, PREFERREDNAME = ?, EMAIL = ? WHERE USERNAME = ?";
+        try (Connection conn = databaseInterface.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, firstName);
+            pstmt.setString(2, middleName);
+            pstmt.setString(3, lastName);
+            pstmt.setString(4, preferredName);
+            pstmt.setString(5, email);
+            pstmt.setString(6, username);
+            System.out.println("EXECUTING - " + pstmt.toString());
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows == 0) {
+                throw new SQLException("Updating user failed, no rows affected.");
+            }
+            System.out.println("User updated sucessfully");
+        }
+    	
+    	
+    }
+    
     
     // Delete operation
     public void deleteUser(String username) throws SQLException {
@@ -206,11 +285,18 @@ public class UserManager {
                 users.add(new User(
                     rs.getString("USERNAME"),
                     rs.getString("EMAIL"),
-                    rs.getString("NAME"),
-                    rs.getString("Password")
+                    rs.getString("FIRSTNAME")
                 ));
             }
         }
         return users;
+    }
+    
+    public UserManager() {
+    	this.dbInterface = new databaseInterface();
+    }
+    
+    public databaseInterface getDatabaseInterface() {
+    	return dbInterface;
     }
 }
