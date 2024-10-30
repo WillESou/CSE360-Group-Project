@@ -1,6 +1,5 @@
 package ui;
 
-import core.ArticleCreationScreen;
 import core.BackupManager;
 import core.databaseInterface;
 import javafx.scene.control.TextInputDialog;
@@ -28,6 +27,7 @@ import java.util.ArrayList;
 
 import core.InviteCodeManager;
 import core.ROLE;
+import core.Source;
 import core.User;
 import core.UserManager;
 
@@ -40,12 +40,14 @@ public class AdminPageController {
 	
 	
 	//javaFX will initialize these variables
+	
+	/*
 	@FXML
 	private Button createArticleBtn;
 	
 	@FXML
 	private Button backupArticleBtn;
-	
+	*/
     @FXML
     private Button listUsersBtn;
 
@@ -455,6 +457,14 @@ public class AdminPageController {
     }
     
     @FXML
+    private void handleArticle() {
+    	Source.getUIManager().loadArticlePage();
+    }
+    
+    
+    /*
+    
+    @FXML
     private void handleCreateArticle() {
     	ArticleCreationScreen articleCreateScreen = new ArticleCreationScreen(userMan.getDatabaseInterface()); 
     	articleCreateScreen.show();
@@ -501,7 +511,7 @@ public class AdminPageController {
     
     }
     
-    
+    */
     
     
     

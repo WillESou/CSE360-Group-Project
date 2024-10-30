@@ -20,8 +20,7 @@
                         <Button fx:id="listUsersBtn" mnemonicParsing="false" onAction="#handleListUsers" prefHeight="20.0" prefWidth="100.0" text="List Users" />
                         <Button fx:id="editUsersBtn" mnemonicParsing="false" onAction="#handleEditUsers" prefHeight="20.0" prefWidth="100.0" text="Edit User" />
                         <Button fx:id="inviteUserBtn" mnemonicParsing="false" onAction="#handleInviteUser" prefHeight="20.0" prefWidth="100.0" text="Invite User" />
-                        <Button fx:id="createArticleBtn" mnemonicParsing="false" onAction="#handleCreateArticle" prefHeight="20.0" prefWidth="100.0" text="Create Article" />
-                        <Button fx:id="backupArticleBtn" mnemonicParsing="false" onAction="#handleBackupArticle" prefHeight="20.0" prefWidth="100.0" text="Backup Article" />
+                        <Button fx:id="articleBtn" mnemonicParsing="false" onAction="#handleArticle" prefHeight="20.0" prefWidth="100.0" text="Articles" />
                         <Button fx:id="logoutBtn" mnemonicParsing="false" onAction="#handleLogout" prefHeight="20.0" prefWidth="100.0" text="Logout" />
                      </children>
                      <opaqueInsets>

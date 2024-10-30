@@ -9,8 +9,9 @@
  * 
  * @version 1.0    2024-10-15    Initial implementation
  */
-package core;
+package ui;
 
+import core.Article;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;

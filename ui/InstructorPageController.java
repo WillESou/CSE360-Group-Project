@@ -35,7 +35,7 @@ public class InstructorPageController {
     }
 	
 	@FXML
-	private void handleArticles() {
-		//TODO, implement HW6 Page
+	private void handleArticle() {
+		core.Source.getUIManager().loadArticlePage();
 	}
 }

@@ -9,14 +9,14 @@
  * 
  * @version 1.0    2024-10-15    Initial implementation
  */
-package core;
+package ui;
 
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
-
+import core.Article;
 import core.databaseInterface;
 
 /**

@@ -9,7 +9,7 @@
  * 
  * @version 1.0    2024-10-15    Initial implementation
  */
-package core;
+package ui;
 
 import javafx.application.Application;
 import javafx.beans.property.SimpleStringProperty;
@@ -28,14 +28,18 @@ import javafx.scene.text.FontWeight;
 import java.io.File;
 import java.util.List;
 
+import core.Article;
+import core.BackupManager;
+import core.Source;
 import core.databaseInterface;
+import core.ROLE;
 
 /**
  * This class represents the main application for the Help Article Management System.
  * It provides a graphical user interface for managing help articles, including
  * creation, display, deletion, and backup/restore functionality.
  */
-public class HelpArticleSystem extends Application {
+public class HelpArticleSystem{
 
     private static final String RED = "#FC3D21";
     private static final String BLACK = "#000000";
@@ -48,8 +52,7 @@ public class HelpArticleSystem extends Application {
      * 
      * @param primaryStage The primary stage for this application
      */
-    @Override
-    public void start(Stage primaryStage) {
+    public void show() {
         // Initialize database and backup managers
     	try {
 			dbMan = new databaseInterface();
@@ -57,8 +60,7 @@ public class HelpArticleSystem extends Application {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-    	
-    	primaryStage.setTitle("Help Article Management System");
+    
         
         VBox mainLayout = new VBox(10);
         mainLayout.setPadding(new Insets(20));
@@ -76,6 +78,7 @@ public class HelpArticleSystem extends Application {
         Button refreshButton = createStylizedButton("REFRESH ARTICLE LIST");
         Button backupButton = createStylizedButton("BACKUP ARTICLES");
         Button restoreButton = createStylizedButton("RESTORE ARTICLES");
+        Button quitButton = createStylizedButton("EXIT");
         
         addButton.setOnAction(e -> showArticleCreationScreen());
         displayButton.setOnAction(e -> displaySelectedArticle());
@@ -83,16 +86,17 @@ public class HelpArticleSystem extends Application {
         refreshButton.setOnAction(e -> refreshArticleList());
         backupButton.setOnAction(e -> backupArticles());
         restoreButton.setOnAction(e -> restoreArticles());
-
+        quitButton.setOnAction(e-> handleQuit());
+        
         HBox buttonBox = new HBox(10);
-        buttonBox.getChildren().addAll(addButton, displayButton, deleteButton, refreshButton, backupButton, restoreButton);
+        buttonBox.getChildren().addAll(addButton, displayButton, deleteButton, refreshButton, backupButton, restoreButton, quitButton);
 
         mainLayout.getChildren().addAll(titleLabel, articleTable, buttonBox);
 
         Scene scene = new Scene(mainLayout, 800, 600);
-        primaryStage.setScene(scene);
-        primaryStage.show();
-    }
+        Source.getPrimaryStage().setScene(scene);
+        Source.getPrimaryStage().show();
+        }
 
     /**
      * Creates a styled button with the given text.
@@ -131,6 +135,28 @@ public class HelpArticleSystem extends Application {
         articleTable.getColumns().addAll(idColumn,titleColumn, authorColumn);
     }
 	
+    
+    private void handleQuit() {
+    	
+    	switch(Source.getUIManager().getSelectedRole()) {
+    		case core.ROLE.INSTRUCTOR:
+    			Source.getUIManager().loadInstructorPage();
+    			break;
+    		case core.ROLE.STUDENT:
+    			Source.getUIManager().loadUserPage();
+    			break;
+    		case core.ROLE.ADMIN:
+    			Source.getUIManager().loadAdminPage();
+    			break;
+    		default:
+    			System.out.println("ARTICLE SYSTEM QUIT BUT COULD NOT FIND VALID ROLE TO RETURN TO");
+    			return;
+    	}
+    	
+    }
+    
+    
+    
     /**
      * Shows the article creation screen.
      */
@@ -240,12 +266,4 @@ public class HelpArticleSystem extends Application {
         alert.showAndWait();
     }
 
-    /**
-     * The main method that launches the JavaFX application.
-     * 
-     * @param args Command line arguments (not used)
-     */
-    public static void main(String[] args) {
-        launch(args);
-    }
 }
