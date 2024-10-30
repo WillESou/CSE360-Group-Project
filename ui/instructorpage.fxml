@@ -9,7 +9,7 @@
    <children>
       <VBox alignment="CENTER" layoutX="229.0" layoutY="100.0" prefHeight="200.0" prefWidth="142.0" spacing="20.0" style="-fx-background-color: #F2F7FF;">
          <children>
-            <Button fx:id="articleBtn" mnemonicParsing="false" onAction="#handleArticles" prefHeight="26.0" prefWidth="115.0" text="Manage Articles" />
+            <Button fx:id="articleBtn" mnemonicParsing="false" onAction="#handleArticle" prefHeight="26.0" prefWidth="115.0" text="Manage Articles" />
             <Button fx:id="logoutBtn" mnemonicParsing="false" onAction="#handleLogout" prefHeight="26.0" prefWidth="115.0" text="Logout" />
          </children>
          <opaqueInsets>

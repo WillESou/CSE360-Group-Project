@@ -9,9 +9,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-
+import core.databaseInterface;
 
 public class UserManager {
+	private databaseInterface dbInterface;
+	
 	// Create operation
     public void createUser(String username, String email, String name, String password) throws SQLException {
         String sql = "INSERT INTO USERS (USERNAME, EMAIL, FIRSTNAME, PASSWORD) VALUES (?, ?, ?, ?)";
@@ -303,5 +305,13 @@ public class UserManager {
             }
         }
         return users;
+    }
+    
+    public UserManager() {
+    	this.dbInterface = new databaseInterface();
+    }
+    
+    public databaseInterface getDatabaseInterface() {
+    	return dbInterface;
     }
 }

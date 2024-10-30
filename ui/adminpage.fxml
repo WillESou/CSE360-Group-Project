@@ -11,15 +11,16 @@
 
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: #6BB3E3;" xmlns="http://javafx.com/javafx/23" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.AdminPageController">
    <children>
-      <SplitPane dividerPositions="0.29" prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: #6BB3E3;">
+      <SplitPane dividerPositions="0.29" prefHeight="1400.0" prefWidth="1600.0" style="-fx-background-color: #6BB3E3;">
         <items>
           <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
                <children>
-                  <VBox alignment="CENTER" prefHeight="398.0" prefWidth="175.0" spacing="80.0" style="-fx-background-color: #F2F7FF;">
+                  <VBox alignment="CENTER" prefHeight="398.0" prefWidth="175.0" spacing="20.0" style="-fx-background-color: #F2F7FF;">
                      <children>
                         <Button fx:id="listUsersBtn" mnemonicParsing="false" onAction="#handleListUsers" prefHeight="20.0" prefWidth="100.0" text="List Users" />
                         <Button fx:id="editUsersBtn" mnemonicParsing="false" onAction="#handleEditUsers" prefHeight="20.0" prefWidth="100.0" text="Edit User" />
                         <Button fx:id="inviteUserBtn" mnemonicParsing="false" onAction="#handleInviteUser" prefHeight="20.0" prefWidth="100.0" text="Invite User" />
+                        <Button fx:id="articleBtn" mnemonicParsing="false" onAction="#handleArticle" prefHeight="20.0" prefWidth="100.0" text="Articles" />
                         <Button fx:id="logoutBtn" mnemonicParsing="false" onAction="#handleLogout" prefHeight="20.0" prefWidth="100.0" text="Logout" />
                      </children>
                      <opaqueInsets>

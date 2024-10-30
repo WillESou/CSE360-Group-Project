@@ -37,16 +37,20 @@ public class RoleSelectionPageController {
 
     @FXML
     private void handleAdminBtn() {
+    	
         Source.getUIManager().loadAdminPage();
+        Source.getUIManager().selectRole(core.ROLE.ADMIN);
     }
 
     @FXML
     private void handleStudentBtn() {
     	Source.getUIManager().loadUserPage();
+    	Source.getUIManager().selectRole(core.ROLE.STUDENT);
     }
 
     @FXML
     private void handleInstructorBtn() {
         Source.getUIManager().loadInstructorPage();
+        Source.getUIManager().selectRole(core.ROLE.INSTRUCTOR);
     }
 }

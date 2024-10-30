@@ -12,9 +12,10 @@ import javafx.stage.Stage;
 
 public class UIManager {
 	private static User loggedInUser;
-	
+	private static core.ROLE selectedRole;
 	public UIManager(){
 		loggedInUser = null;
+		selectedRole = null;
 	}
 	
 	
@@ -89,6 +90,21 @@ public class UIManager {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	public void loadArticlePage() {
+		
+		HelpArticleSystem articleSystem = new HelpArticleSystem();
+		articleSystem.show();
+	}
+	
+	
+	public core.ROLE getSelectedRole() {
+		return selectedRole;
+	}
+	
+	public void selectRole(core.ROLE role) {
+		selectedRole = role;
 	}
 	
 	
