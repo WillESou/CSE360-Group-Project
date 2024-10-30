@@ -26,7 +26,9 @@ public class User {
 	// User attributes
 	private String username;
 	private String email;
-	private String name;
+	private String firstname;
+	private String middlename;
+	private String lastname;
 	private String prefName; 
 	private boolean changed = false;
 	public Set<ROLE> roles = new HashSet<>();
@@ -38,15 +40,17 @@ public class User {
 	User(String username, String email, String name){
 		this.username = username;
 		this.email = email;
-		this.name = name;
+		this.firstname = name;
 	}
 	
 	//Overloaded contructor
-	User(String username, String email, String name, List<String> roles){
+	User(String username, String email, String firstName, String middleName, String lastName, String prefName, List<String> roles){
 		this.username = username;
 		this.email = email;
-		this.name = name;
-		
+		this.firstname = firstName;
+		this.middlename = middleName;
+		this.lastname = lastName;
+		this.prefName = prefName;
 		
 		for(String s : roles) {
 			switch(s){
@@ -75,9 +79,18 @@ public class User {
 		return this.email;
 	}
 	
-	public String getName() { 
-		return this.name;
+	public String getFirstName() { 
+		return this.firstname;
 	}
+	
+	public String getMiddleName() {
+		return middlename;
+	}
+
+	public String getLastName() {
+		return lastname;
+	}
+
 	
 	public String getPrefName() {
 		return this.prefName;
@@ -107,11 +120,17 @@ public class User {
 		changed = true;
 	}
 	
-	public void setName(String newName) {
-		this.name = newName;
+	public void setFirstName(String newName) {
+		this.firstname = newName;
 		changed = true;
 	}
-	
+
+	public void setLastname(String lastname) {
+		this.lastname = lastname;
+	}
+	public void setMiddlename(String middlename) {
+		this.middlename = middlename;
+	}
 	public void setPrefName(String newPrefName) {
 		this.prefName = newPrefName;
 		changed = true;

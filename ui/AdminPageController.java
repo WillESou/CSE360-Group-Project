@@ -9,9 +9,14 @@ import java.util.Optional;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
@@ -21,6 +26,7 @@ import javafx.scene.layout.VBox;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+import core.InviteCodeManager;
 import core.ROLE;
 import core.User;
 import core.UserManager;
@@ -267,7 +273,66 @@ public class AdminPageController {
 
     @FXML
     private void handleInviteUser() {
-        // Method stub
+    	// Create the custom dialog
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Generate Invite Code");
+        dialog.setHeaderText("Select role for the invite code");
+
+        // Create the content for the dialog
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(10));
+        content.setAlignment(Pos.CENTER);
+
+        // Create role selection combo box
+        ComboBox<String> roleComboBox = new ComboBox<>();
+        roleComboBox.getItems().addAll("ADMIN", "INSTRUCTOR", "STUDENT");
+        roleComboBox.setValue("STUDENT"); // Default value
+        
+        content.getChildren().addAll(
+            new Label("Role:"),
+            roleComboBox
+        );
+
+        // Set the content and add buttons
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        // Show the dialog and handle the result
+        dialog.showAndWait().ifPresent(buttonType -> {
+            if (buttonType == ButtonType.OK) {
+                String selectedRole = roleComboBox.getValue();
+                try {
+                    InviteCodeManager inviteManager = new InviteCodeManager();
+                    String generatedCode = inviteManager.generateInviteCode(selectedRole);
+                    
+                    // Show the generated code in a new dialog
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Invite Code Generated");
+                    alert.setHeaderText("Share this code with the new user");
+                    alert.setContentText("Code: " + generatedCode + "\nRole: " + selectedRole);
+                    
+                    // Make the code selectable
+                    Label codeLabel = new Label(generatedCode);
+                    codeLabel.setStyle("-fx-font-family: monospace; -fx-font-size: 16px;");
+                    VBox alertContent = new VBox(10);
+                    alertContent.getChildren().addAll(
+                        new Label("Share this code with the new user:"),
+                        codeLabel
+                    );
+                    alert.getDialogPane().setContent(alertContent);
+                    
+                    alert.showAndWait();
+                    
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Error");
+                    alert.setHeaderText(null);
+                    alert.setContentText("An error occurred while generating the invite code.");
+                    alert.showAndWait();
+                }
+            }
+        });
     }
 
     @FXML
@@ -344,7 +409,7 @@ public class AdminPageController {
 				
 				content.add("USERNAME: " + selectedUser.getUsername());
 				content.add("EMAIL: " + selectedUser.getEmail());
-				content.add("NAME: " + selectedUser.getName());
+				content.add("NAME: " + selectedUser.getFirstName());
 				content.add("PREFFERED NAME: " + selectedUser.getPrefName());
 				content.add("ROLES:");
 				for(core.ROLE role : selectedUser.getRoles()){
@@ -371,7 +436,9 @@ public class AdminPageController {
         ObservableList<String> content = FXCollections.observableArrayList();
         content.add("USERNAME: " + selectedUser.getUsername());
 		content.add("EMAIL: " + selectedUser.getEmail());
-		content.add("NAME: " + selectedUser.getName());
+		content.add("FIRST NAME: " + selectedUser.getFirstName());
+		content.add("MIDDLE NAME: " + selectedUser.getMiddleName());
+		content.add("LAST NAME: " + selectedUser.getLastName());
 		content.add("PREFFERED NAME: " + selectedUser.getPrefName());
 		content.add("ROLES:");
 		for(core.ROLE role : selectedUser.getRoles()){
