@@ -1,5 +1,11 @@
 package ui;
 
+import core.ArticleCreationScreen;
+import core.BackupManager;
+import core.databaseInterface;
+import javafx.scene.control.TextInputDialog;
+import java.util.Optional;
+
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -24,9 +30,16 @@ public class AdminPageController {
 	//Delcaring need variables
 	UserManager userMan;
 	User selectedUser;
+	BackupManager backupManage;
 	
 	
 	//javaFX will initialize these variables
+	@FXML
+	private Button createArticleBtn;
+	
+	@FXML
+	private Button backupArticleBtn;
+	
     @FXML
     private Button listUsersBtn;
 
@@ -373,5 +386,70 @@ public class AdminPageController {
 		}
 		targetUserView.setItems(content);
     }
+    
+    @FXML
+    private void handleCreateArticle() {
+    	ArticleCreationScreen articleCreateScreen = new ArticleCreationScreen(userMan.getDatabaseInterface()); 
+    	articleCreateScreen.show();
+    }
+    
+    @FXML
+    private void handleBackupArticle() {
+    Optional<String> filename;
+    
+    TextInputDialog file = new TextInputDialog();
+    file.setTitle("Back Up Article");
+    file.setHeaderText("Enter the file name");
+    file.setContentText("File name: ");
+    
+    filename = file.showAndWait();
+    
+    //To get if there is a file name given 
+    if(filename.isPresent()) {
+    	
+    	String enteredName = filename.get(); //To get the file name
+    	
+    	try {
+    		
+    		BackupManager backupManage = new BackupManager(userMan.getDatabaseInterface());
+    		backupManage.backupArticles(enteredName);//The file name given
+    		Alert alert = new Alert(Alert.AlertType.INFORMATION,"Articles are backed up",ButtonType.OK);
+    		alert.showAndWait();
+    		
+    	}catch (Exception e) {
+    		
+    		Alert alert = new Alert(Alert.AlertType.ERROR,"Failed to back up the file"+e.getMessage(),ButtonType.OK);
+    		alert.showAndWait();
+    		e.printStackTrace();
+    	}
+    	
+    	}
+    
+    else {
+    	
+    	Alert alert = new Alert(Alert.AlertType.WARNING,"Please enter a file name",ButtonType.OK);
+    	alert.showAndWait();
+    	
+    }
+    
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
 }
