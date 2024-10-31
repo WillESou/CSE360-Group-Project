@@ -26,6 +26,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
 import java.io.File;
+import java.sql.SQLException;
 import java.util.List;
 
 import core.Article;
@@ -44,6 +45,7 @@ public class HelpArticleSystem{
     private static final String RED = "#FC3D21";
     private static final String BLACK = "#000000";
     private TableView<Article> articleTable;
+    HBox searchBox;
     private databaseInterface dbMan;
     private BackupManager backupMan;
     
@@ -71,13 +73,15 @@ public class HelpArticleSystem{
         titleLabel.setTextFill(Color.web(RED));
 
         setupArticleTable();
-
+        setupSearchBox();
+        
         Button addButton = createStylizedButton("ADD ARTICLE");
         Button displayButton = createStylizedButton("DISPLAY ARTICLE");
         Button deleteButton = createStylizedButton("DELETE ARTICLE");
         Button refreshButton = createStylizedButton("REFRESH ARTICLE LIST");
         Button backupButton = createStylizedButton("BACKUP ARTICLES");
         Button restoreButton = createStylizedButton("RESTORE ARTICLES");
+        Button deleteAllArticlesButton = createStylizedButton("ERASE ALL ARTICLES");
         Button quitButton = createStylizedButton("EXIT");
         
         addButton.setOnAction(e -> showArticleCreationScreen());
@@ -86,14 +90,15 @@ public class HelpArticleSystem{
         refreshButton.setOnAction(e -> refreshArticleList());
         backupButton.setOnAction(e -> backupArticles());
         restoreButton.setOnAction(e -> restoreArticles());
+        deleteAllArticlesButton.setOnAction(e -> deleteAllArticles());
         quitButton.setOnAction(e-> handleQuit());
         
         HBox buttonBox = new HBox(10);
-        buttonBox.getChildren().addAll(addButton, displayButton, deleteButton, refreshButton, backupButton, restoreButton, quitButton);
+        buttonBox.getChildren().addAll(addButton, displayButton, deleteButton, refreshButton, backupButton, restoreButton, deleteAllArticlesButton, quitButton);
 
-        mainLayout.getChildren().addAll(titleLabel, articleTable, buttonBox);
+        mainLayout.getChildren().addAll(titleLabel,searchBox, articleTable, buttonBox);
 
-        Scene scene = new Scene(mainLayout, 800, 600);
+        Scene scene = new Scene(mainLayout, 1400, 1400);
         Source.getPrimaryStage().setScene(scene);
         Source.getPrimaryStage().show();
         }
@@ -136,6 +141,22 @@ public class HelpArticleSystem{
     }
 	
     
+    private void setupSearchBox() {
+        searchBox = new HBox(10);
+        searchBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        
+        TextField searchField = new TextField();
+        searchField.setPromptText("Enter keyword to search");
+        searchField.setStyle("-fx-background-color: #1C1C1C; -fx-text-fill: white; -fx-prompt-text-fill: gray;");
+        searchField.setPrefWidth(200);
+        
+        Button searchButton = createStylizedButton("SEARCH");
+        searchButton.setOnAction(e -> performSearch(searchField.getText()));
+        
+        searchBox.getChildren().addAll(new Label("SEARCH BY KEYWORD:"), searchField, searchButton);
+    }
+    
+    
     private void handleQuit() {
     	
     	switch(Source.getUIManager().getSelectedRole()) {
@@ -155,7 +176,24 @@ public class HelpArticleSystem{
     	
     }
     
-    
+    private void performSearch(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            showAlert("Search Error", "Please enter a keyword to search.");
+            return;
+        }
+        
+        try {
+            List<Article> searchResults = dbMan.searchByKeyword(keyword);
+            articleTable.setItems(FXCollections.observableArrayList(searchResults));
+            
+            if (searchResults.isEmpty()) {
+                showAlert("Search Results", "No articles found matching the keyword: " + keyword);
+            }
+        } catch (Exception e) {
+            showAlert("Search Error", "An error occurred while searching: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
     
     /**
      * Shows the article creation screen.
@@ -181,6 +219,22 @@ public class HelpArticleSystem{
         }
     }
 
+    
+    private void deleteAllArticles() {
+    	try {
+			dbMan.clearAllArticles();
+			refreshArticleList();
+			showAlert("Deleted all articles", "Success!");
+		} catch (SQLException e) {
+			showAlert("Delete All Articles", "Error: Could not delete articles");
+			e.printStackTrace();
+		}
+    	
+    	
+    	
+    }
+    
+    
     /**
      * Deletes the selected article from the database.
      */

@@ -318,6 +318,40 @@ public class databaseInterface {
     }
    
     /**
+     * Retrieves an article if it contains the given keyword
+     * 
+     * @param keyword
+     * @return
+     * @throws Exception
+     */
+    
+    public List<Article> searchByKeyword(String keyword) throws Exception {
+        List<Article> matchingArticles = new ArrayList<>();
+        String sql = "SELECT id, title, authors, keywords FROM help_articles";
+        
+        try (Statement stmt = getConnection().createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                // Decrypt and check keywords
+                String decryptedKeywords = decryptField(rs.getString("keywords")).toLowerCase();
+                if (decryptedKeywords.contains(keyword.toLowerCase())) {
+                    Article article = new Article(
+                        decryptField(rs.getString("title")).toCharArray(),
+                        decryptField(rs.getString("authors")).toCharArray()
+                    );
+                    article.setId(rs.getInt("id"));
+                    matchingArticles.add(article);
+                }
+            }
+        }
+        return matchingArticles;
+    }
+    
+    
+    
+    
+    
+    /**
      * Clears all articles from the database.
      * 
      * @throws SQLException If there's an error executing the SQL statement
