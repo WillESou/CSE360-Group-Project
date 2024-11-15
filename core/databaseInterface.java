@@ -318,6 +318,93 @@ public class databaseInterface {
     }
    
     /**
+<<<<<<< Updated upstream
+=======
+     * Retrieves an article if it contains the given keyword
+     * 
+     * @param keyword
+     * @return
+     * @throws Exception
+     */
+    
+    public List<Article> searchByKeyword(String keyword) throws Exception {
+        List<Article> matchingArticles = new ArrayList<>();
+        String sql = "SELECT id, title, authors, keywords FROM help_articles";
+        
+        try (Statement stmt = getConnection().createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                // Decrypt and check keywords
+                String decryptedKeywords = decryptField(rs.getString("keywords")).toLowerCase();
+                if (decryptedKeywords.contains(keyword.toLowerCase())) {
+                    Article article = new Article(
+                        decryptField(rs.getString("title")).toCharArray(),
+                        decryptField(rs.getString("authors")).toCharArray()
+                    );
+                    article.setId(rs.getInt("id"));
+                    matchingArticles.add(article);
+                }
+            }
+        }
+        return matchingArticles;
+    }
+    
+    /**
+     * Creates the necessary tables in the database if they don't already exist.
+     * 
+     * @throws SQLException If there's an error executing the SQL statement
+     */
+    private void createGenGroupsTable(Connection conn) throws SQLException {
+        String sql = "CREATE TABLE IF NOT EXISTS general_groups ("
+        		+ "group VARCHAR(255) NOT NULL, "
+                + "id INT NOT NULL";
+        executeUpdate(conn, sql, "GROUPS table");
+    }
+    
+    /**
+     * Adds an article to a group.
+     * 
+     * @param id - The ID value of the article to be added
+     * @param groupName - The name of the group the article is added to
+     * @throws Exception If there's an error adding the article to the database
+     */
+    private void addGroup(int id, String groupName) throws SQLException, Exception {
+    	String sql = "INSERT INTO general_groups (group, id) VALUES (?, ?)";
+    	try (PreparedStatement pstmt = getConnection().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+    		pstmt.setString(1, encryptField(groupName));
+    		pstmt.setInt(2, id);;
+    		
+    		pstmt.executeUpdate();
+    	}
+    }
+    
+    /**
+     * Retrieves all articles in a general group by name
+     * 
+     * @param groupName - The name of the group to filter from
+     * @throws Exception
+     */
+    public List<Article> filterGroup(String groupName) throws SQLException, Exception {
+    	List<Article> matchingArticles = new ArrayList<>();
+        String sql = "SELECT group, id FROM general_groups";
+        
+        try (Statement stmt = getConnection().createStatement();
+                ResultSet rs = stmt.executeQuery(sql)) {
+               while (rs.next()) {
+                   // Decrypt and check keywords
+                   String decryptedKeywords = decryptField(rs.getString("group")).toLowerCase();
+                   if (decryptedKeywords.equals(groupName.toLowerCase())) {
+                       Article article = getArticle(rs.getInt("id"));
+                       article.setId(rs.getInt("id"));
+                       matchingArticles.add(article);
+                   }
+               }
+           }
+           return matchingArticles;
+    }
+    
+    /**
+>>>>>>> Stashed changes
      * Clears all articles from the database.
      * 
      * @throws SQLException If there's an error executing the SQL statement
