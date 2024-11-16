@@ -78,6 +78,7 @@ public class HelpArticleSystem{
         Button refreshButton = createStylizedButton("REFRESH ARTICLE LIST");
         Button backupButton = createStylizedButton("BACKUP ARTICLES");
         Button restoreButton = createStylizedButton("RESTORE ARTICLES");
+        Button searchButton = createStylizedButton("SEARCH");
         Button quitButton = createStylizedButton("EXIT");
         
         addButton.setOnAction(e -> showArticleCreationScreen());
@@ -86,10 +87,11 @@ public class HelpArticleSystem{
         refreshButton.setOnAction(e -> refreshArticleList());
         backupButton.setOnAction(e -> backupArticles());
         restoreButton.setOnAction(e -> restoreArticles());
+        searchButton.setOnAction(e -> search());
         quitButton.setOnAction(e-> handleQuit());
         
         HBox buttonBox = new HBox(10);
-        buttonBox.getChildren().addAll(addButton, displayButton, deleteButton, refreshButton, backupButton, restoreButton, quitButton);
+        buttonBox.getChildren().addAll(addButton, displayButton, deleteButton, refreshButton, backupButton, restoreButton, searchButton, quitButton);
 
         mainLayout.getChildren().addAll(titleLabel, articleTable, buttonBox);
 
@@ -250,6 +252,10 @@ public class HelpArticleSystem{
                 showAlert("Restore Failed", "Failed to restore articles: " + e.getMessage());
             }
         }
+    }
+    
+    private void search() {
+    	
     }
 
     /**
