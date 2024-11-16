@@ -330,9 +330,7 @@ public class databaseInterface {
         return articles;
     }
    
-    /**
-<<<<<<< Updated upstream
-=======
+
      * Retrieves an article if it contains the given keyword
      * 
      * @param keyword
@@ -362,6 +360,7 @@ public class databaseInterface {
         return matchingArticles;
     }
     
+
     /**
      * Creates the necessary tables in the database if they don't already exist.
      * 
@@ -469,8 +468,6 @@ public class databaseInterface {
            return matchingArticles;
     }
     
-    /**
->>>>>>> Stashed changes
      * Clears all articles from the database.
      * 
      * @throws SQLException If there's an error executing the SQL statement

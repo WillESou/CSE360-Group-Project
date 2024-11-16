@@ -161,11 +161,6 @@ public class LoginPageController {
 					finalizeAccountPane.setVisible(true);
 					finalizeAccountPane.setDisable(false);
                     messageLabel.setText("FINALIZE ACCOUNT");
-					
-				} else {
-					Source.getUIManager().logUserIn(loggedInUser);
-					//Load the RoleSelectionPage
-					Source.getUIManager().loadRoleSelectionPage();
 				}
 				
 				if (loggedInUser.getFirstName() == "") {
@@ -204,12 +199,17 @@ public class LoginPageController {
 										userMan.updatePassword(loggedInUser.getUsername(), newPass.getText());
 										System.out.println(newPass.getText());
 										userMan.updateUser(username, null, null, null, null, null);
+
+										passwordField.clear();
+										return;
 									} catch (SQLException e) {
 										// TODO Auto-generated catch block
 										e.printStackTrace();
 									}
 				                }
 				            });
+							passwordField.clear();
+				            return;
 		                }
 			        } catch (DateTimeParseException dtpe) {
 			        }
@@ -218,7 +218,11 @@ public class LoginPageController {
 				// OLD
 				//RoleSelectionPage roleSelectionPage = new RoleSelectionPage(loggedInUser);
 				//roleSelectionPage.show();
-			} else {
+				
+				Source.getUIManager().logUserIn(loggedInUser);
+				//Load the RoleSelectionPage
+				Source.getUIManager().loadRoleSelectionPage();
+				} else {
 				
 				//Clear passwordField
 				passwordField.clear();
@@ -226,7 +230,8 @@ public class LoginPageController {
 				Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid Login", ButtonType.OK);
 				alert.showAndWait();
 			}
-		} catch (SQLException e) {
+			
+			} catch (SQLException e) {
 			
 			e.printStackTrace();
 		}
