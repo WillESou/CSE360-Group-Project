@@ -139,6 +139,12 @@ public class BackupManager {
         byte[] encrypted = encryptionHelper.encrypt(field.getBytes(), iv);
         return Base64.getEncoder().encodeToString(encrypted) + ":" + Base64.getEncoder().encodeToString(iv);
     }
+    
+    private int getID(String encrypt) {
+    	int ret = 0;
+    	
+    	return ret;
+    }
 
     /**
      * Decrypts a single encrypted field.
