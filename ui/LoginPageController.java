@@ -147,6 +147,12 @@ public class LoginPageController {
 				//Log user in with UIManager
 				
 				
+				System.out.println("user first: " + loggedInUser.getFirstName() + "\n" +
+									"user last: " + loggedInUser.getLastName() + "\n" + 
+									"user middle: " + loggedInUser.getMiddleName() + "\n" +
+									"user pref: " + loggedInUser.getPrefName() + "\n" +
+									"user email: " + loggedInUser.getEmail());
+				
 				
 				//Check if account finalization is needed
 				if((loggedInUser.getFirstName() == null) || 
@@ -161,6 +167,7 @@ public class LoginPageController {
 					finalizeAccountPane.setVisible(true);
 					finalizeAccountPane.setDisable(false);
                     messageLabel.setText("FINALIZE ACCOUNT");
+                    return;
 				}
 				
 				if (loggedInUser.getFirstName() == "") {
