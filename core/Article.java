@@ -24,6 +24,7 @@ public class Article {
     private char[] keywords;
     private char[] body;
     private char[] references;
+    private char[] group;
 
     /**
      * Constructs a new Article with all attributes.
@@ -35,13 +36,14 @@ public class Article {
      * @param body The main body of the article
      * @param references The references of the article
      */
-    public Article(char[] title, char[] authors, char[] abstractBody, char[] keywords, char[] body, char[] references) {
+    public Article(char[] title, char[] authors, char[] abstractBody, char[] keywords, char[] body, char[] references, char[] group) {
         this.title = title;
         this.authors = authors;
         this.abstractBody = abstractBody;
         this.keywords = keywords;
         this.body = body;
         this.references = references;
+        this.group = group;
     }
 
     /**
@@ -84,6 +86,10 @@ public class Article {
      * @return The references of the article
      */
     public char[] getReferences() { return references; }
+    /**
+     * @return The group name of the article
+     */
+    public char[] getGroup() { return group; }
 
     // Setters
     /**
@@ -121,6 +127,11 @@ public class Article {
      * @param references The new references
      */
     public void setReferences(char[] references) { this.references = references; }
+    /**
+     * Sets the group of the article
+     * @param references The new references
+     */
+    public void setGroup(char[] group) { this.group = group; }
 
     /**
      * Clears sensitive data by overwriting content with spaces.

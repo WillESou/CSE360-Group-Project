@@ -75,6 +75,7 @@ public class databaseInterface {
             createUserSkillsTable(connection);
 
             createArticleTables(connection);
+            createGenArticlesTable(connection);
 
             createInviteCodesTable(connection);
 
@@ -245,7 +246,6 @@ public class databaseInterface {
     private int getID(char[] title) {
 
     	int id = Math.abs(Arrays.hashCode(title));
-    	System.out.println(id);
     	return id % 100000;
     }
     
@@ -269,7 +269,7 @@ public class databaseInterface {
             pstmt.setString(6, encryptField(new String(article.getBody())));
             pstmt.setString(7, encryptField(new String(article.getReferences())));
 
-            
+            addArtGroup(id, new String(article.getGroup()));
             
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows == 0) {
@@ -321,7 +321,8 @@ public class databaseInterface {
                     decryptField(rs.getString("abstract")).toCharArray(),
                     decryptField(rs.getString("keywords")).toCharArray(),
                     decryptField(rs.getString("body")).toCharArray(),
-                    decryptField(rs.getString("references")).toCharArray()
+                    decryptField(rs.getString("references")).toCharArray(),
+                    null
                 );
                 nArticle.setId(rs.getInt("id"));
                 articles.add(nArticle);
@@ -337,7 +338,6 @@ public class databaseInterface {
      * @return
      * @throws Exception
      */
-    
     public List<Article> searchByKeyword(String keyword) throws Exception {
         List<Article> matchingArticles = new ArrayList<>();
         String sql = "SELECT id, title, authors, keywords FROM help_articles";
@@ -382,7 +382,7 @@ public class databaseInterface {
      */
     private void addUserGroup(String userName, String groupName) throws SQLException, Exception {
     	String sql = "INSERT INTO general_groups (group, user) VALUES (?, ?)";
-    	try (PreparedStatement pstmt = getConnection().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+    	try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
     		pstmt.setString(1, encryptField(groupName));
     		pstmt.setString(2, encryptField(userName));;
     		
@@ -421,9 +421,10 @@ public class databaseInterface {
      */
     private void createGenArticlesTable(Connection conn) throws SQLException {
         String sql = "CREATE TABLE IF NOT EXISTS general_articles ("
-        		+ "group VARCHAR(255) NOT NULL, "
-                + "id INT NOT NULL";
-        executeUpdate(conn, sql, "GROUPART table");
+        		+ "GROUP_NAME VARCHAR(255) NOT NULL, "
+                + "ID INT NOT NULL"
+        		+ ")";
+        executeUpdate(conn, sql, "general_articles table");
     }
     
     /**
@@ -434,13 +435,36 @@ public class databaseInterface {
      * @throws Exception If there's an error adding the article to the database
      */
     private void addArtGroup(int id, String groupName) throws SQLException, Exception {
-    	String sql = "INSERT INTO general_articles (group, id) VALUES (?, ?)";
-    	try (PreparedStatement pstmt = getConnection().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+    	String sql = "INSERT INTO general_articles (GROUP_NAME, ID) VALUES (?, ?)";
+    	try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
     		pstmt.setString(1, encryptField(groupName));
     		pstmt.setInt(2, id);;
     		
     		pstmt.executeUpdate();
     	}
+    	System.out.println(groupName);
+    }
+    
+    /*
+     * Retrieves a list of all general groups.
+     * 
+     * @return A list of all Group Name strings.
+     * @throws Exception
+     */
+    public List<String> listGroups() throws Exception{
+    	List<String> ret = new ArrayList<String>();
+    	ret.add("General");
+    	String sql = "SELECT GROUP_NAME FROM general_articles";
+    	
+    	try (Statement stmt = getConnection().createStatement();
+                ResultSet rs = stmt.executeQuery(sql)) {
+               while (rs.next()) {
+            	   if (!ret.contains(decryptField(rs.getString("GROUP_NAME")))) {
+            		   ret.add(decryptField(rs.getString("GROUP_NAME")));
+            	   }
+               }
+    	}
+    	return ret;
     }
     
     /**
@@ -451,16 +475,16 @@ public class databaseInterface {
      */
     public List<Article> filterGroup(String groupName) throws SQLException, Exception {
     	List<Article> matchingArticles = new ArrayList<>();
-        String sql = "SELECT group, id FROM general_articles";
+        String sql = "SELECT GROUP_NAME, ID FROM general_articles";
         
         try (Statement stmt = getConnection().createStatement();
                 ResultSet rs = stmt.executeQuery(sql)) {
                while (rs.next()) {
                    // Decrypt and check keywords
-                   String decryptedGroup = decryptField(rs.getString("group")).toLowerCase();
+                   String decryptedGroup = decryptField(rs.getString("GROUP_NAME")).toLowerCase();
                    if (decryptedGroup.equals(groupName.toLowerCase())) {
-                       Article article = getArticle(rs.getInt("id"));
-                       article.setId(rs.getInt("id"));
+                       Article article = getArticle(rs.getInt("ID"));
+                       article.setId(rs.getInt("ID"));
                        matchingArticles.add(article);
                    }
                }
@@ -481,6 +505,14 @@ public class databaseInterface {
             System.err.println("Error clearing articles: " + e.getMessage());
             throw e;
         }
+        sql = "DELETE FROM general_articles";
+        try (Statement stmt = getConnection().createStatement()) {
+            int rowsAffected = stmt.executeUpdate(sql);
+            System.out.println("Cleared " + rowsAffected + " groups from the database.");
+        } catch (SQLException e) {
+            System.err.println("Error clearing groups: " + e.getMessage());
+            throw e;
+        }
     }
    
     /**
@@ -491,7 +523,17 @@ public class databaseInterface {
      * @throws Exception If there's an error retrieving the article from the database
      */
     public Article getArticle(int id) throws Exception {
-        String sql = "SELECT * FROM help_articles WHERE id = ?";
+    	String group = "General";
+    	String sql = "SELECT * FROM general_articles WHERE ID = ?";
+        try (PreparedStatement pstmtG = getConnection().prepareStatement(sql)) {
+            pstmtG.setInt(1, id);
+            try (ResultSet rsG = pstmtG.executeQuery()) {
+                if (rsG.next()) {
+                	group = decryptField(rsG.getString("GROUP_NAME"));
+                }
+            }
+        }
+        sql = "SELECT * FROM help_articles WHERE id = ?";
         try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
             pstmt.setInt(1, id);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -502,7 +544,8 @@ public class databaseInterface {
                         decryptField(rs.getString("abstract")).toCharArray(),
                         decryptField(rs.getString("keywords")).toCharArray(),
                         decryptField(rs.getString("body")).toCharArray(),
-                        decryptField(rs.getString("references")).toCharArray()
+                        decryptField(rs.getString("references")).toCharArray(),
+                        group.toCharArray()
                     );
                     nArticle.setId(rs.getInt("id"));
                     return nArticle;
@@ -545,6 +588,12 @@ public class databaseInterface {
             pstmt.setInt(1, id);
             pstmt.execute();
             System.out.println("Article id: " + id + " deleted successfully");
+        }
+        sql = "DELETE FROM general_articles WHERE ID = ?";
+        try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
+            pstmt.setInt(1, id);
+            pstmt.execute();
+            System.out.println("Group with Article id: " + id + " deleted successfully");
         }
     }
    

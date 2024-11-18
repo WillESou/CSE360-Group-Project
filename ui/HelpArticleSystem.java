@@ -15,6 +15,7 @@ import javafx.application.Application;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -48,6 +49,7 @@ public class HelpArticleSystem{
     HBox searchBox;
     private databaseInterface dbMan;
     private BackupManager backupMan;
+    private String currentGroup = "General";
     
     /**
      * The main entry point for the JavaFX application.
@@ -92,16 +94,18 @@ public class HelpArticleSystem{
         backupButton.setOnAction(e -> backupArticles());
         restoreButton.setOnAction(e -> restoreArticles());
         searchButton.setOnAction(e -> search());
+        deleteAllArticlesButton.setOnAction(e -> deleteAllArticles());
         quitButton.setOnAction(e-> handleQuit());
         
         HBox buttonBox = new HBox(10);
-        buttonBox.getChildren().addAll(addButton, displayButton, deleteButton, refreshButton, backupButton, restoreButton, searchButton, quitButton);
+        buttonBox.getChildren().addAll(addButton, displayButton, deleteButton, deleteAllArticlesButton, refreshButton, backupButton, restoreButton, searchButton, quitButton);
 
         mainLayout.getChildren().addAll(titleLabel,searchBox, articleTable, buttonBox);
 
-        Scene scene = new Scene(mainLayout, 1400, 1400);
+        Scene scene = new Scene(mainLayout, 1400, 700);
         Source.getPrimaryStage().setScene(scene);
         Source.getPrimaryStage().show();
+        refreshArticleList();
         }
 
     /**
@@ -123,7 +127,7 @@ public class HelpArticleSystem{
     /**
      * Sets up the table view for displaying articles.
      */
-    private void setupArticleTable() {
+	private void setupArticleTable() {
         articleTable = new TableView<>();
         articleTable.setStyle("-fx-background-color: #1C1C1C; -fx-text-fill: white;");
 
@@ -137,8 +141,46 @@ public class HelpArticleSystem{
         TableColumn<Article, String> authorColumn = new TableColumn<>("Author(s)");
         authorColumn.setCellValueFactory(cellData -> 
             new SimpleStringProperty(new String(cellData.getValue().getAuthors())));
+        
+        TableColumn<Article, String> groupColumn = new TableColumn<>("Group");
+        groupColumn.setCellValueFactory(cellData -> 
+            new SimpleStringProperty(new String(cellData.getValue().getGroup())));
 
-        articleTable.getColumns().addAll(idColumn,titleColumn, authorColumn);
+        articleTable.getColumns().addAll(idColumn,titleColumn, authorColumn, groupColumn);
+    }
+    
+    private void displayGroup() throws Exception {
+    	
+    	Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Group Selection");
+        dialog.setHeaderText("Select a Group to Filter:");
+
+        // Create the content for the dialog
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(10));
+        content.setAlignment(Pos.CENTER);
+
+        // Create role selection combo box
+        ComboBox<String> roleComboBox = new ComboBox<>();
+        roleComboBox.getItems().addAll(dbMan.listGroups());
+        roleComboBox.setValue("General"); // Default value
+        
+        content.getChildren().addAll(
+            new Label("Groups:"),
+            roleComboBox
+        );
+
+        // Set the content and add buttons
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        // Show the dialog and handle the result
+        dialog.showAndWait().ifPresent(buttonType -> {
+            if (buttonType == ButtonType.OK) {
+                currentGroup = roleComboBox.getValue();
+            }
+        });
+        refreshArticleList();
     }
 	
     
@@ -153,8 +195,18 @@ public class HelpArticleSystem{
         
         Button searchButton = createStylizedButton("SEARCH");
         searchButton.setOnAction(e -> performSearch(searchField.getText()));
+
+        Button chooseGroup = createStylizedButton("Choose Group");
+        chooseGroup.setOnAction(e -> {
+			try {
+				displayGroup();
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		});
         
-        searchBox.getChildren().addAll(new Label("SEARCH BY KEYWORD:"), searchField, searchButton);
+        searchBox.getChildren().addAll(new Label("SEARCH BY KEYWORD:"), searchField, searchButton, chooseGroup);
     }
     
     
@@ -259,7 +311,7 @@ public class HelpArticleSystem{
      */
     public void refreshArticleList() {
         try {
-            List<Article> articles = dbMan.getAllArticles();
+            List<Article> articles = dbMan.filterGroup(currentGroup);
             articleTable.setItems(FXCollections.observableArrayList(articles));
         } catch (Exception e) {
             showAlert("Refresh Error", "Failed to refresh article list: " + e.getMessage());

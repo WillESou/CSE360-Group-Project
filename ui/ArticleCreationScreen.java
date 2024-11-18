@@ -25,7 +25,7 @@ import core.databaseInterface;
  */
 public class ArticleCreationScreen {
     private Stage stage;
-    private TextField titleField, authorsField, keywordsField;
+    private TextField titleField, authorsField, keywordsField, groupField;
     private TextArea abstractArea, bodyArea, referencesArea;
     private databaseInterface dbMan;
     
@@ -50,6 +50,7 @@ public class ArticleCreationScreen {
         abstractArea = createStylizedTextArea("Abstract");
         bodyArea = createStylizedTextArea("Body");
         referencesArea = createStylizedTextArea("References");
+        groupField = createStylizedTextField("Group (Optional)");
 
         Button saveButton = new Button("SAVE ARTICLE");
         saveButton.setStyle("-fx-background-color: #FC3D21; -fx-text-fill: white; -fx-font-weight: bold;");
@@ -59,7 +60,7 @@ public class ArticleCreationScreen {
             new Label("CREATE HELP ARTICLE"),
             titleField, authorsField, keywordsField,
             abstractArea, bodyArea, referencesArea,
-            saveButton
+            groupField, saveButton
         );
 
         Scene scene = new Scene(layout, 600, 800);
@@ -98,13 +99,18 @@ public class ArticleCreationScreen {
      */
     private void saveArticle() {
         // Create a new Article instance with the input data
+    	
+    	String groupName = groupField.getText();
+    	if (groupName.isEmpty()) {groupName = "General";}
+    	
         Article newArticle = new Article(
         		titleField.getText().toCharArray(),
         		authorsField.getText().toCharArray(),
         		abstractArea.getText().toCharArray(),
         		keywordsField.getText().toCharArray(),
         		bodyArea.getText().toCharArray(),
-        		referencesArea.getText().toCharArray()
+        		referencesArea.getText().toCharArray(),
+        		groupName.toCharArray()
         		);
     	try {
 			dbMan.addArticle(newArticle);

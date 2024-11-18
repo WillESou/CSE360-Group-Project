@@ -123,7 +123,8 @@ public class BackupManager {
             decryptField(fields[2]).toCharArray(),
             decryptField(fields[3]).toCharArray(),
             decryptField(fields[4]).toCharArray(),
-            decryptField(fields[5]).toCharArray()
+            decryptField(fields[5]).toCharArray(),
+            null
         );
     }
 
