@@ -38,7 +38,7 @@ public class ArticleDisplayScreen {
 
         VBox layout = new VBox(10);
         layout.setPadding(new Insets(20));
-        layout.setStyle("-fx-background-color: #000000;");
+        layout.setStyle("-fx-background-color: #6BB3E3;");
 
         // Initialize labels
         titleLabel = createStylizedLabel("Title");
@@ -77,7 +77,7 @@ public class ArticleDisplayScreen {
      */
     private Label createStylizedLabel(String text) {
         Label label = new Label(text);
-        label.setStyle("-fx-text-fill: #FC3D21; -fx-font-weight: bold;");
+        label.setStyle("-fx-text-fill: #000000; -fx-font-weight: bold;");
         return label;
     }
 
