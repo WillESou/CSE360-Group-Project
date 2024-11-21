@@ -167,6 +167,7 @@ public class HelpArticleSystem{
         articleTable.getColumns().addAll(idColumn,titleColumn, authorColumn, groupColumn);
     }
     
+	// Function for choosing a new group to display articles from.
     private void displayGroup() throws Exception {
     	
     	Dialog<ButtonType> dialog = new Dialog<>();
@@ -201,6 +202,7 @@ public class HelpArticleSystem{
         show();
     }
     
+    // Admin function for creating a new group.
     private void createGroup() throws Exception {
     	Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("Group Creation");
@@ -242,6 +244,7 @@ public class HelpArticleSystem{
         show();
     }
     
+    // Admin function for adding a user to a special group.
     private void addToGroup() throws Exception {
     	Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("Add User to Group");
@@ -293,6 +296,7 @@ public class HelpArticleSystem{
         show();
     } 
     
+    // Admin function for managing users in a special group.
     private void manageGroup() throws SQLException, Exception {
     	Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("Manage User in Group");
@@ -348,7 +352,7 @@ public class HelpArticleSystem{
         show();
     }
 	
-    
+    // GUI function to give buttons for searching and group functionalitits.
     private void setupSearchBox() throws SQLException, Exception {
         searchBox = new HBox(10);
         searchBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);

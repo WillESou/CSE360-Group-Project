@@ -334,7 +334,6 @@ public class databaseInterface {
    
 
      /* Retrieves an article if it contains the given keyword
-
      * 
      * @param keyword
      * @return
@@ -437,6 +436,13 @@ public class databaseInterface {
     	}
     }
     
+    /**
+     * Toggles admin functionality to a user
+     * 
+     * @param user - the user to be toggled
+     * @param groupName - The name of the group
+     * @throws Exception If there's an error adding the article to the database
+     */
     public void toggleAdmin(User user, String groupName) throws SQLException, Exception {
     	
     	String sql = "UPDATE group_access SET GROUP_NAME = ?, USER_NAME = ?, ACCESS = ?";
@@ -445,13 +451,13 @@ public class databaseInterface {
     		pstmt.setString(2, (user.getUsername()));
     		
     		int access = groupAccess(user.getUsername(), groupName);
-    		if (access == 2 || access == 1) {
+    		if (access == 2 || access == 1) { // To make the user not an admin
     			access = 0;
-    		} else if (access == 0 && user.hasRole(ROLE.INSTRUCTOR)) {
+    		} else if (access == 0 && user.hasRole(ROLE.INSTRUCTOR)) { // To make the instructor an admin
     			access = 2;
-    		} else if (access == 0 && user.hasRole(ROLE.ADMIN)) {
+    		} else if (access == 0 && user.hasRole(ROLE.ADMIN)) { // To make the admin a generic admin to the group
     			access = 1;
-    		} else {
+    		} else { // If the user cannot be made admin
     			System.out.println("User Cannot be Made Admin.");
     		}
     		
@@ -502,6 +508,13 @@ public class databaseInterface {
     	 return false;
     }
     
+    /**
+     * Returns the access number of a user in a group.
+     * 
+     * @param userName - The name of the user
+     * @param groupName - The name of the group
+     * @throws Exception If there's an error adding the article to the database
+     */
     public int groupAccess(String userName, String groupName) throws SQLException, Exception {
     	
     	String sql = "SELECT GROUP_NAME, USER_NAME, ACCESS FROM group_access";
@@ -510,11 +523,19 @@ public class databaseInterface {
                 while (rs.next()) {
                 	String decryptedGroup = decryptField(rs.getString("GROUP_NAME"));
                 	String user = (rs.getString("USER_NAME"));
+                	
                 	if (decryptedGroup.equals(groupName) && 
                 			user.equals(userName)) {
+                		/**
+                		 * If the user is a part of the group, return their accessibility number.
+                		 * 0 - Viewing Rights
+                		 * 1 - Admin without Viewing Rights
+                		 * 2 - Instructor with Admin Rights
+                		 */
                 		return (rs.getInt("ACCESS"));
+                		
                 	} else if (decryptedGroup.equals(groupName) &&
-                			user.equals("ALL")) {
+                			user.equals("ALL")) { // Access rights number 3 means the group is not special access.
                 		return 3;
                 	}
                 }
@@ -602,7 +623,7 @@ public class databaseInterface {
                 	   
                 	   int access = groupAccess(currentUser.getUsername(), groupName);
                 	   
-                	   if (access != 1) {
+                	   if (access != 1) { // If the user is not an admin in a special group, they may view the article.
                 		   Article article = getArticle(rs.getInt("ID"));
                 		   article.setId(rs.getInt("ID"));
                            matchingArticles.add(article);
@@ -617,9 +638,7 @@ public class databaseInterface {
            return matchingArticles;
     }
     
-
      /* Clears all articles from the database.
-
      * 
      * @throws SQLException If there's an error executing the SQL statement
      */
