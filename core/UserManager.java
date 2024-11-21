@@ -145,6 +145,21 @@ public class UserManager {
         }
     }
     
+    public void updatePassword(String username, String newPassword) throws SQLException {
+    	String sql = "UPDATE USERS SET PASSWORD = ? WHERE USERNAME = ?";
+        try (Connection conn = databaseInterface.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, newPassword);
+            pstmt.setString(2, username);
+
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows == 0) {
+                throw new SQLException("Updating user failed, no rows affected.");
+            }
+            System.out.println("Password updated sucessfully");
+        }
+    }
+    
     public void updateUser(String username, String firstName, String middleName, String lastName, String preferredName, String email) throws SQLException {
     	String sql = "UPDATE USERS SET FIRSTNAME = ?, MIDDLENAME = ?, LASTNAME = ?, PREFERREDNAME = ?, EMAIL = ? WHERE USERNAME = ?";
         try (Connection conn = databaseInterface.getConnection();

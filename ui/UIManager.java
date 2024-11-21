@@ -3,6 +3,7 @@ package ui;
 import core.User;
 
 import java.io.IOException;
+import java.sql.SQLException;
 
 import core.Source;
 import javafx.fxml.FXMLLoader;
@@ -95,7 +96,12 @@ public class UIManager {
 	public void loadArticlePage() {
 		
 		HelpArticleSystem articleSystem = new HelpArticleSystem();
-		articleSystem.show();
+		try {
+			articleSystem.show();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	

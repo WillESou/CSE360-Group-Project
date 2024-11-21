@@ -24,7 +24,7 @@ import javafx.stage.Stage;
  */
 public class ArticleDisplayScreen {
     private Stage stage;
-    private Label titleLabel, authorsLabel, abstractLabel, keywordsLabel, bodyLabel, referencesLabel;
+    private Label titleLabel, authorsLabel, abstractLabel, keywordsLabel, bodyLabel, referencesLabel, groupLabel;
     private TextArea abstractArea, bodyArea, referencesArea;
  
     /**
@@ -47,6 +47,7 @@ public class ArticleDisplayScreen {
         keywordsLabel = createStylizedLabel("Keywords");
         bodyLabel = createStylizedLabel("Body");
         referencesLabel = createStylizedLabel("References");
+        groupLabel = createStylizedLabel("Group");
 
         // Initialize text areas
         abstractArea = createStylizedTextArea();
@@ -58,7 +59,8 @@ public class ArticleDisplayScreen {
             titleLabel, authorsLabel, keywordsLabel,
             abstractLabel, abstractArea,
             bodyLabel, bodyArea,
-            referencesLabel, referencesArea
+            referencesLabel, referencesArea,
+            groupLabel
         );
         
         // Display the article content
@@ -109,6 +111,7 @@ public class ArticleDisplayScreen {
                 abstractArea.setText(new String(article.getAbstract()));
                 bodyArea.setText(new String(article.getBody()));
                 referencesArea.setText(new String(article.getReferences()));
+                groupLabel.setText("Group: " + new String(article.getGroup()));
             } else {
                 showAlert("Article Not Found", "The requested article could not be found.");
             }

@@ -24,8 +24,6 @@ import core.Article;
 import core.EncryptionHelper;
 import core.EncryptionUtils;
 
-
-
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -34,11 +32,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import java.util.*;
+import java.nio.*;
+
 public class databaseInterface {
 	
 	private EncryptionHelper encryptHelper;
 	private Statement statement = null;
-	
 	
 	private static Connection connection;
 	private static String jdbcURL = "jdbc:h2:./programDatabase";
@@ -71,19 +71,24 @@ public class databaseInterface {
 			createRolesTable(connection);
 			populateRolesTable(connection);
 			createUserRolesTable(connection);
-            createSkillsTable(connection);
-            createUserSkillsTable(connection);
-            createArticleTables(connection);
-            createInviteCodesTable(connection);
+      createSkillsTable(connection);
+      createUserSkillsTable(connection);
+      createArticleTables(connection);
+
+      createGroupTable(connection);
+      createGenArticlesTable(connection);
+
+
+      createInviteCodesTable(connection);
 
             
-            //Creating questions tables
-            createGeneralQuestionsTable(connection);
-            createSpecificQuestionsTable(connection);
+      //Creating questions tables
+      createGeneralQuestionsTable(connection);
+      createSpecificQuestionsTable(connection);
             
-            //Creating session tables
-            createSessionTable(connection);
-            createSessionStudentsTable(connection);
+      //Creating session tables
+      createSessionTable(connection);
+      createSessionStudentsTable(connection);
             
             
 		} catch (SQLException e) {
@@ -381,8 +386,8 @@ public class databaseInterface {
      */
     private void createArticleTables(Connection conn) throws SQLException {
         String sql = "CREATE TABLE IF NOT EXISTS help_articles ("
-                + "id INT AUTO_INCREMENT PRIMARY KEY, "
-                + "title VARCHAR(255) NOT NULL, "
+                + "id INT PRIMARY KEY, "
+                + "title VARCHAR(255) UNIQUE NOT NULL, "
                 + "authors VARCHAR(1000) NOT NULL, "
                 + "abstract TEXT, "
                 + "keywords VARCHAR(500), "
@@ -393,6 +398,19 @@ public class databaseInterface {
         executeUpdate(conn, sql, "ARTICLES table");
     }
     
+    
+    
+    /**
+     * Creates a unique ID number based on an article's title. Because titles are unique, all ID values are unique.
+     * 
+     * @throws SQLException If there's an error executing the SQL statement
+     */
+    private int getID(char[] title) {
+
+    	int id = Math.abs(Arrays.hashCode(title));
+    	return id % 100000;
+    }
+    
     /**
      * Adds a new article to the database.
      * 
@@ -401,27 +419,26 @@ public class databaseInterface {
      * @throws Exception If there's an error adding the article to the database
      */
     public int addArticle(Article article) throws Exception {
-        String sql = "INSERT INTO help_articles (title, authors, abstract, keywords, body, references) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO help_articles (id, title, authors, abstract, keywords, body, references) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement pstmt = getConnection().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            pstmt.setString(1, encryptField(new String(article.getTitle())));
-            pstmt.setString(2, encryptField(new String(article.getAuthors())));
-            pstmt.setString(3, encryptField(new String(article.getAbstract())));
-            pstmt.setString(4, encryptField(new String(article.getKeywords())));
-            pstmt.setString(5, encryptField(new String(article.getBody())));
-            pstmt.setString(6, encryptField(new String(article.getReferences())));
+        	
+        	int id = getID(article.getTitle());
+            pstmt.setInt(1, id);
+            pstmt.setString(2, encryptField(new String(article.getTitle())));
+            pstmt.setString(3, encryptField(new String(article.getAuthors())));
+            pstmt.setString(4, encryptField(new String(article.getAbstract())));
+            pstmt.setString(5, encryptField(new String(article.getKeywords())));
+            pstmt.setString(6, encryptField(new String(article.getBody())));
+            pstmt.setString(7, encryptField(new String(article.getReferences())));
+
+            addArtGroup(id, new String(article.getGroup()));
             
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows == 0) {
                 throw new SQLException("Creating article failed, no rows affected.");
             }
 
-            try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    return generatedKeys.getInt(1);
-                } else {
-                    throw new SQLException("Creating article failed, no ID obtained.");
-                }
-            }
+            return id;
         }
     }
 
@@ -466,7 +483,8 @@ public class databaseInterface {
                     decryptField(rs.getString("abstract")).toCharArray(),
                     decryptField(rs.getString("keywords")).toCharArray(),
                     decryptField(rs.getString("body")).toCharArray(),
-                    decryptField(rs.getString("references")).toCharArray()
+                    decryptField(rs.getString("references")).toCharArray(),
+                    null
                 );
                 nArticle.setId(rs.getInt("id"));
                 articles.add(nArticle);
@@ -475,8 +493,294 @@ public class databaseInterface {
         return articles;
     }
    
+
+     /* Retrieves an article if it contains the given keyword
+
+     * 
+     * @param keyword
+     * @return
+     * @throws Exception
+     */
+    public List<Article> searchByKeyword(String keyword) throws Exception {
+        List<Article> matchingArticles = new ArrayList<>();
+        String sql = "SELECT id, title, authors, keywords FROM help_articles";
+        
+        try (Statement stmt = getConnection().createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                // Decrypt and check keywords
+                String decryptedKeywords = decryptField(rs.getString("keywords")).toLowerCase();
+                if (decryptedKeywords.contains(keyword.toLowerCase())) {
+                    Article article = new Article(
+                        decryptField(rs.getString("title")).toCharArray(),
+                        decryptField(rs.getString("authors")).toCharArray()
+                    );
+                    article.setId(rs.getInt("id"));
+                    matchingArticles.add(article);
+                }
+            }
+        }
+        return matchingArticles;
+    }
+    
+
     /**
-     * Clears all articles from the database.
+     * Creates the necessary tables in the database if they don't already exist.
+     * 
+     * @throws SQLException If there's an error executing the SQL statement
+     */
+    private void createGroupTable(Connection conn) throws SQLException {
+        String sql = "CREATE TABLE IF NOT EXISTS group_access ("
+        		+ "GROUP_NAME VARCHAR(255) NOT NULL, "
+                + "USER_NAME VARCHAR(255) NOT NULL,"
+        		/**
+        		 * For any group, 0 means not an admin, 1 means admin,
+        		 * 2 means instructor admin, and 3 means the group is general.
+        		 */
+                + "ACCESS INT"
+        		+ ")";
+        executeUpdate(conn, sql, "group_access table");
+    }
+    
+    /**
+     * Adds a group
+     * 
+     * @param groupName - The name of the group the article is added to
+     * @param isSpecial - Whether the group added is a special access group
+     * @throws Exception If there's an error adding the article to the database
+     */
+    public void createGroup(String groupName, boolean isSpecial) throws SQLException, Exception {
+    	User writer = Source.getUIManager().getUser();
+    	
+    	String sql = "INSERT INTO group_access (GROUP_NAME, USER_NAME, ACCESS) VALUES (?, ?, ?)";
+    	try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
+    		pstmt.setString(1, encryptField(groupName));
+    		
+    		if (!isSpecial) { // General Group
+    			pstmt.setString(2, ("ALL"));
+    			pstmt.setInt(3, 3);
+    		} else if (writer.hasRole(ROLE.INSTRUCTOR)) { // The creator is an instructor, and is therefore the first instructor added.
+    			pstmt.setString(2, (writer.getUsername()));
+    			pstmt.setInt(3, 2);
+    		} else { // The creator is not an instructor, and cannot see the articles.
+    			pstmt.setString(2, (writer.getUsername()));
+    			pstmt.setInt(3, 1);
+    		}
+    		
+    		pstmt.executeUpdate();
+    	}
+    }
+    
+    /**
+     * Adds a user to a group.
+     * 
+     * @param userName - The name of the user to join a group
+     * @param access - The access level that the user is given.
+     * @param groupName - The name of the group the article is added to
+     * @throws Exception If there's an error adding the article to the database
+     */
+    public void addUserGroup(User user, boolean admin, String groupName) throws SQLException, Exception {
+    	
+    	String sql = "INSERT INTO group_access (GROUP_NAME, USER_NAME, ACCESS) VALUES (?, ?, ?)";
+    	try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
+    		pstmt.setString(1, encryptField(groupName));
+    		pstmt.setString(2, (user.getUsername()));
+    		
+    		int access = 0;
+    		if (user.hasRole(ROLE.INSTRUCTOR) && admin) {
+    			access = 2;
+    		} else if (user.hasRole(ROLE.ADMIN) && admin) {
+    			access = 1;
+    		}
+    		pstmt.setInt(3, access);
+    		
+    		pstmt.executeUpdate();
+    	}
+    }
+    
+    public void toggleAdmin(User user, String groupName) throws SQLException, Exception {
+    	
+    	String sql = "UPDATE group_access SET GROUP_NAME = ?, USER_NAME = ?, ACCESS = ?";
+    	try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
+    		pstmt.setString(1, encryptField(groupName));
+    		pstmt.setString(2, (user.getUsername()));
+    		
+    		int access = groupAccess(user.getUsername(), groupName);
+    		if (access == 2 || access == 1) {
+    			access = 0;
+    		} else if (access == 0 && user.hasRole(ROLE.INSTRUCTOR)) {
+    			access = 2;
+    		} else if (access == 0 && user.hasRole(ROLE.ADMIN)) {
+    			access = 1;
+    		} else {
+    			System.out.println("User Cannot be Made Admin.");
+    		}
+    		
+    		pstmt.setInt(3, access);
+    		pstmt.executeUpdate();
+    	}
+    }
+    
+    /**
+     * Deletes a user to a group.
+     * 
+     * @param userName - The name of the user to be deleted
+     * @param groupName - The name of the group the user is deleted from
+     * @throws Exception If there's an error adding the article to the database
+     */
+    public void deleteUserFromGroup(String userName, String groupName) throws SQLException, Exception {
+    	String sql = "DELETE FROM group_access WHERE GROUP_NAME = ? AND USER_NAME = ?";
+    	try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
+    		pstmt.setString(1, encryptField(groupName));
+    		pstmt.setString(2, (userName));
+    		
+    		pstmt.executeUpdate();
+    	}
+    }
+    
+    /**
+     * Checks to see if a user is currently enrolled in a group.
+     * 
+     * @param userName - The name of the user to join a group
+     * @param groupName - The name of the group the article is added to
+     * @throws Exception If there's an error adding the article to the database
+     */
+    public boolean userInGroup(String userName, String groupName) throws SQLException, Exception {
+    	
+    	String sql = "SELECT GROUP_NAME, USER_NAME, ACCESS FROM group_access";
+    	 try (Statement stmt = getConnection().createStatement();
+                 ResultSet rs = stmt.executeQuery(sql)) {
+                while (rs.next()) {
+                	String decryptedGroup = decryptField(rs.getString("GROUP_NAME"));
+                	String user = (rs.getString("USER_NAME"));
+                	if ((decryptedGroup.equals(groupName) && 
+                			(user.equals(userName) && rs.getInt("ACCESS") != 1)
+                			|| user.equals("ALL"))) {
+                		return true;
+                	}
+                }
+    	 }
+    	 return false;
+    }
+    
+    public int groupAccess(String userName, String groupName) throws SQLException, Exception {
+    	
+    	String sql = "SELECT GROUP_NAME, USER_NAME, ACCESS FROM group_access";
+    	 try (Statement stmt = getConnection().createStatement();
+                 ResultSet rs = stmt.executeQuery(sql)) {
+                while (rs.next()) {
+                	String decryptedGroup = decryptField(rs.getString("GROUP_NAME"));
+                	String user = (rs.getString("USER_NAME"));
+                	if (decryptedGroup.equals(groupName) && 
+                			user.equals(userName)) {
+                		return (rs.getInt("ACCESS"));
+                	} else if (decryptedGroup.equals(groupName) &&
+                			user.equals("ALL")) {
+                		return 3;
+                	}
+                }
+    	 }
+    	 return -1;
+    }
+    
+    /**
+     * Creates the necessary tables in the database if they don't already exist.
+     * 
+     * @throws SQLException If there's an error executing the SQL statement
+     */
+    private void createGenArticlesTable(Connection conn) throws SQLException {
+        String sql = "CREATE TABLE IF NOT EXISTS group_articles ("
+        		+ "GROUP_NAME VARCHAR(255) NOT NULL, "
+                + "ID INT NOT NULL"
+        		+ ")";
+        executeUpdate(conn, sql, "group_articles table");
+    }
+    
+    /**
+     * Adds an article to a group.
+     * 
+     * @param id - The ID value of the article to be added
+     * @param groupName - The name of the group the article is added to
+     * @throws Exception If there's an error adding the article to the database
+     */
+    private void addArtGroup(int id, String groupName) throws SQLException, Exception {
+    	String sql = "INSERT INTO group_articles (GROUP_NAME, ID) VALUES (?, ?)";
+    	try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
+    		pstmt.setString(1, encryptField(groupName));
+    		pstmt.setInt(2, id);
+    		
+    		pstmt.executeUpdate();
+    	}
+    	System.out.println(groupName);
+    }
+    
+    /*
+     * Retrieves a list of all general groups, as well as groups the user has access to.
+     * 
+     * @return A list of all Group Name strings.
+     * @throws Exception
+     */
+    public List<String> listGroups() throws Exception{
+    	User currentUser = Source.getUIManager().getUser();
+    	
+    	List<String> ret = new ArrayList<String>();
+    	ret.add("General");
+    	String sql = "SELECT GROUP_NAME, USER_NAME, ACCESS FROM group_access";
+    	
+    	try (Statement stmt = getConnection().createStatement();
+                ResultSet rs = stmt.executeQuery(sql)) {
+               while (rs.next()) {
+            	   if (!ret.contains(decryptField(rs.getString("GROUP_NAME")))) {
+            		   if (userInGroup(currentUser.getUsername(), decryptField(rs.getString("GROUP_NAME")))
+            				   || currentUser.hasRole(ROLE.ADMIN)) {
+            			   ret.add(decryptField(rs.getString("GROUP_NAME")));
+            		   }
+            	   }
+               }
+    	}
+    	return ret;
+    }
+    
+    /**
+     * Retrieves all articles in a group by name
+     * 
+     * @param groupName - The name of the group to filter from
+     * @throws Exception
+     */
+    public List<Article> filterGroup(String groupName) throws SQLException, Exception {
+    	User currentUser = Source.getUIManager().getUser();
+    	
+    	List<Article> matchingArticles = new ArrayList<>();
+        String sql = "SELECT GROUP_NAME, ID FROM group_articles";
+        
+        try (Statement stmt = getConnection().createStatement();
+                ResultSet rs = stmt.executeQuery(sql)) {
+               while (rs.next()) {
+
+                   String decryptedGroup = decryptField(rs.getString("GROUP_NAME")).toLowerCase();
+                   
+                   if (decryptedGroup.equals(groupName.toLowerCase())) {
+                	   
+                	   int access = groupAccess(currentUser.getUsername(), groupName);
+                	   
+                	   if (access != 1) {
+                		   Article article = getArticle(rs.getInt("ID"));
+                		   article.setId(rs.getInt("ID"));
+                           matchingArticles.add(article);
+                	   } else {
+                		   Article article = getEncArticle(rs.getInt("ID"));
+                		   article.setId(rs.getInt("ID"));
+                           matchingArticles.add(article);
+                	   }
+                   }
+               }
+           }
+           return matchingArticles;
+    }
+    
+
+     /* Clears all articles from the database.
+
      * 
      * @throws SQLException If there's an error executing the SQL statement
      */
@@ -489,6 +793,14 @@ public class databaseInterface {
             System.err.println("Error clearing articles: " + e.getMessage());
             throw e;
         }
+        sql = "DELETE FROM group_articles";
+        try (Statement stmt = getConnection().createStatement()) {
+            int rowsAffected = stmt.executeUpdate(sql);
+            System.out.println("Cleared " + rowsAffected + " groups from the database.");
+        } catch (SQLException e) {
+            System.err.println("Error clearing groups: " + e.getMessage());
+            throw e;
+        }
     }
    
     /**
@@ -499,7 +811,17 @@ public class databaseInterface {
      * @throws Exception If there's an error retrieving the article from the database
      */
     public Article getArticle(int id) throws Exception {
-        String sql = "SELECT * FROM help_articles WHERE id = ?";
+    	String group = "General";
+    	String sql = "SELECT * FROM group_articles WHERE ID = ?";
+        try (PreparedStatement pstmtG = getConnection().prepareStatement(sql)) {
+            pstmtG.setInt(1, id);
+            try (ResultSet rsG = pstmtG.executeQuery()) {
+                if (rsG.next()) {
+                	group = decryptField(rsG.getString("GROUP_NAME"));
+                }
+            }
+        }
+        sql = "SELECT * FROM help_articles WHERE id = ?";
         try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
             pstmt.setInt(1, id);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -510,7 +832,48 @@ public class databaseInterface {
                         decryptField(rs.getString("abstract")).toCharArray(),
                         decryptField(rs.getString("keywords")).toCharArray(),
                         decryptField(rs.getString("body")).toCharArray(),
-                        decryptField(rs.getString("references")).toCharArray()
+                        decryptField(rs.getString("references")).toCharArray(),
+                        group.toCharArray()
+                    );
+                    nArticle.setId(rs.getInt("id"));
+                    return nArticle;
+                }
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Retrieves an encrypted article by its ID.
+     * 
+     * @param id The ID of the article to retrieve
+     * @return The Article object if found, null otherwise
+     * @throws Exception If there's an error retrieving the article from the database
+     */
+    public Article getEncArticle(int id) throws Exception {
+    	String group = "General";
+    	String sql = "SELECT * FROM group_articles WHERE ID = ?";
+        try (PreparedStatement pstmtG = getConnection().prepareStatement(sql)) {
+            pstmtG.setInt(1, id);
+            try (ResultSet rsG = pstmtG.executeQuery()) {
+                if (rsG.next()) {
+                	group = decryptField(rsG.getString("GROUP_NAME"));
+                }
+            }
+        }
+        sql = "SELECT * FROM help_articles WHERE id = ?";
+        try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
+            pstmt.setInt(1, id);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    Article nArticle = new Article(
+                        decryptField(rs.getString("title")).toCharArray(),
+                        decryptField(rs.getString("authors")).toCharArray(),
+                        decryptField(rs.getString("abstract")).toCharArray(),
+                        decryptField(rs.getString("keywords")).toCharArray(),
+                        rs.getString("body").toCharArray(),
+                        decryptField(rs.getString("references")).toCharArray(),
+                        group.toCharArray()
                     );
                     nArticle.setId(rs.getInt("id"));
                     return nArticle;
@@ -553,6 +916,12 @@ public class databaseInterface {
             pstmt.setInt(1, id);
             pstmt.execute();
             System.out.println("Article id: " + id + " deleted successfully");
+        }
+        sql = "DELETE FROM group_articles WHERE ID = ?";
+        try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
+            pstmt.setInt(1, id);
+            pstmt.execute();
+            System.out.println("Group with Article id: " + id + " deleted successfully");
         }
     }
    

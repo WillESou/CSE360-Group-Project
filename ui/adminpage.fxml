@@ -9,9 +9,9 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: #6BB3E3;" xmlns="http://javafx.com/javafx/23" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.AdminPageController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: #6BB3E3;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.AdminPageController">
    <children>
-      <SplitPane dividerPositions="0.29" prefHeight="1400.0" prefWidth="1600.0" style="-fx-background-color: #6BB3E3;">
+      <SplitPane dividerPositions="0.29" prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: #6BB3E3;">
         <items>
           <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
                <children>
@@ -33,7 +33,7 @@
                <children>
                   <AnchorPane fx:id="searchUserView" prefHeight="398.0" prefWidth="416.0" style="-fx-background-color: #6BB3E3;">
                      <children>
-                        <BorderPane fx:id="editUserView" disable="true" prefHeight="398.0" prefWidth="416.0" visible="false">
+                        <BorderPane fx:id="editUserView" disable="true" prefHeight="400.0" prefWidth="422.0" visible="false">
                            <padding>
                               <Insets bottom="10.0" left="10.0" right="10.0" top="20.0" />
                            </padding>
@@ -67,7 +67,7 @@
                               </VBox>
                            </center>
                         </BorderPane>
-                        <ListView fx:id="listUsersView" disable="true" prefHeight="398.0" prefWidth="416.0" visible="false" />
+                        <ListView fx:id="listUsersView" disable="true" prefHeight="398.0" prefWidth="422.0" visible="false" />
                      </children>
                   </AnchorPane>
                </children>

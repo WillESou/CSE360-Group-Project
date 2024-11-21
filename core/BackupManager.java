@@ -104,7 +104,9 @@ public class BackupManager {
         sb.append(encryptField(new String(article.getAbstract()))).append("|");
         sb.append(encryptField(new String(article.getKeywords()))).append("|");
         sb.append(encryptField(new String(article.getBody()))).append("|");
-        sb.append(encryptField(new String(article.getReferences())));
+        sb.append(encryptField(new String(article.getReferences()))).append("|");
+        sb.append(encryptField(new String(article.getGroup())));
+        
         return sb.toString();
     }
 
@@ -117,13 +119,15 @@ public class BackupManager {
      */
     private Article decryptArticle(String encryptedArticle) throws Exception {
         String[] fields = encryptedArticle.split("\\|");
+        
         return new Article(
             decryptField(fields[0]).toCharArray(),
             decryptField(fields[1]).toCharArray(),
             decryptField(fields[2]).toCharArray(),
             decryptField(fields[3]).toCharArray(),
             decryptField(fields[4]).toCharArray(),
-            decryptField(fields[5]).toCharArray()
+            decryptField(fields[5]).toCharArray(),
+            decryptField(fields[6]).toCharArray()
         );
     }
 
@@ -138,6 +142,12 @@ public class BackupManager {
         byte[] iv = EncryptionUtils.getInitializationVector(field.toCharArray());
         byte[] encrypted = encryptionHelper.encrypt(field.getBytes(), iv);
         return Base64.getEncoder().encodeToString(encrypted) + ":" + Base64.getEncoder().encodeToString(iv);
+    }
+    
+    private int getID(String encrypt) {
+    	int ret = 0;
+    	
+    	return ret;
     }
 
     /**

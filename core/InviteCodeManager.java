@@ -62,7 +62,7 @@ public class InviteCodeManager {
         }
     }
     
-    private String generateRandomCode() {
+    public static String generateRandomCode() {
         Random random = new Random();
         StringBuilder code = new StringBuilder();
         

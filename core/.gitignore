@@ -1,3 +1,9 @@
+
+/Article.class
+/BackupManager.class
+/EncryptionHelper.class
+/EncryptionUtils.class
+/InviteCodeManager.class
 /PasswordEvaluator.class
 /ROLE.class
 /Session.class
@@ -7,12 +13,3 @@
 /User.class
 /UserManager.class
 /databaseInterface.class
-/Article.class
-/ArticleManager.class
-/EncryptionHelper.class
-/EncryptionUtils.class
-/ArticleCreationScreen.class
-/ArticleDisplayScreen.class
-/BackupManager.class
-/HelpArticleSystem.class
-/InviteCodeManager.class

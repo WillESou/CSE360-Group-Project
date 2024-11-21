@@ -14,15 +14,19 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 import core.InviteCodeManager;
@@ -312,6 +316,7 @@ public class AdminPageController {
                     alert.setTitle("Invite Code Generated");
                     alert.setHeaderText("Share this code with the new user");
                     alert.setContentText("Code: " + generatedCode + "\nRole: " + selectedRole);
+                    System.out.println(generatedCode);
                     
                     // Make the code selectable
                     Label codeLabel = new Label(generatedCode);
@@ -385,8 +390,86 @@ public class AdminPageController {
 
 
     @FXML
-    private void handleResetUser() {
-        // Method stub
+    private void handleResetUser() throws SQLException {
+    	
+    	Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("One-Time Password");
+        dialog.setHeaderText("Set Date for Password to Expire:");
+
+        // Create the content for the dialog
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(10));
+        content.setAlignment(Pos.CENTER);
+        
+        DatePicker date = new DatePicker();
+        
+        content.getChildren().addAll(
+            date
+        );
+
+        // Set the content and add buttons
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        // Show the dialog and handle the result
+        dialog.showAndWait().ifPresent(buttonType -> {
+            if (buttonType == ButtonType.OK) {
+                LocalDate lDate = date.getValue();
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MM yyyy");
+                String sDate = lDate.format(formatter);
+                System.out.println(sDate);
+                
+	            String generatedCode = InviteCodeManager.generateRandomCode();
+	            
+	            String usname = selectedUser.getUsername();
+	            try {
+					
+		            userMan.deleteUser(usname);
+		            
+		            userMan.createUser(usname, "", "", generatedCode);
+		            userMan.updateUser(usname, "", "", "", "", sDate);
+		            
+		            if (selectedUser.hasRole(ROLE.STUDENT)) {
+		            	userMan.assignRoleToUser(usname, "STUDENT");
+		            }
+		            if (selectedUser.hasRole(ROLE.INSTRUCTOR)) {
+		            	userMan.assignRoleToUser(usname, "INSTRUCTOR");
+		            }
+		            if (selectedUser.hasRole(ROLE.ADMIN)) {
+		            	userMan.assignRoleToUser(usname, "ADMIN");
+		            }
+		            
+		            // Show the generated code in a new dialog
+		            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+		            alert.setTitle("User Reset");
+		            alert.setHeaderText("Share this password with the user");
+		            alert.setContentText("Code: " + generatedCode);
+		            
+		            // Make the code selectable
+		            TextArea codeLabel = new TextArea(generatedCode);
+		            codeLabel.setEditable(false);
+		            codeLabel.setWrapText(true);
+		
+		            codeLabel.setStyle("-fx-font-family: monospace; -fx-font-size: 16px;");
+		            VBox alertContent = new VBox(10);
+		            alertContent.getChildren().addAll(
+		                new Label("Share this password with the user:"),
+		                codeLabel
+		            );
+		            alert.getDialogPane().setContent(alertContent);
+		            
+		            alert.showAndWait();
+		            
+	            } catch (SQLException e) {
+	            	e.printStackTrace();
+	                Alert alert = new Alert(Alert.AlertType.ERROR);
+	                alert.setTitle("Error");
+	                alert.setHeaderText(null);
+	                alert.setContentText("An error occurred while resetting the user.");
+	                alert.showAndWait();
+				}
+            }
+        });
     }
 
     @FXML

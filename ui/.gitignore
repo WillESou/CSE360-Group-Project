@@ -1,9 +1,10 @@
+
 /AdminPageController.class
-/InstructorPage.class
+/ArticleCreationScreen.class
+/ArticleDisplayScreen.class
+/HelpArticleSystem.class
+/InstructorPageController.class
 /LoginPageController.class
 /RoleSelectionPageController.class
 /UIManager.class
-/UserPage.class
-/ArticlepageController.class
-/InstructorPageController.class
 /UserPageController.class
