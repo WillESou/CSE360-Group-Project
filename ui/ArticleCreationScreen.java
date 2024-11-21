@@ -51,7 +51,7 @@ public class ArticleCreationScreen {
 
         VBox layout = new VBox(10);
         layout.setPadding(new Insets(20));
-        layout.setStyle("-fx-background-color: #000000;");
+        layout.setStyle("-fx-background-color: #6BB3E3;");
 
         titleField = createStylizedTextField("Title");
         authorsField = createStylizedTextField("Authors");
@@ -61,7 +61,7 @@ public class ArticleCreationScreen {
         referencesArea = createStylizedTextArea("References");
 
         Button saveButton = new Button("SAVE ARTICLE");
-        saveButton.setStyle("-fx-background-color: #FC3D21; -fx-text-fill: white; -fx-font-weight: bold;");
+        saveButton.setStyle("-fx-background-color: #000000; -fx-text-fill: white; -fx-font-weight: bold;");
         saveButton.setOnAction(e -> saveArticle());
 
         layout.getChildren().addAll(

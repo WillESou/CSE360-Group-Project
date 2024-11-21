@@ -71,19 +71,24 @@ public class databaseInterface {
 			createRolesTable(connection);
 			populateRolesTable(connection);
 			createUserRolesTable(connection);
-            createSkillsTable(connection);
-            createUserSkillsTable(connection);
+      createSkillsTable(connection);
+      createUserSkillsTable(connection);
+      createArticleTables(connection);
 
-            createArticleTables(connection);
-            createGroupTable(connection);
-            createGenArticlesTable(connection);
+      createGroupTable(connection);
+      createGenArticlesTable(connection);
 
-            createInviteCodesTable(connection);
+
+      createInviteCodesTable(connection);
 
             
-            //Creating session tables
-            createSessionTable(connection);
-            createSessionStudentsTable(connection);
+      //Creating questions tables
+      createGeneralQuestionsTable(connection);
+      createSpecificQuestionsTable(connection);
+            
+      //Creating session tables
+      createSessionTable(connection);
+      createSessionStudentsTable(connection);
             
             
 		} catch (SQLException e) {
@@ -206,6 +211,162 @@ public class databaseInterface {
         executeUpdate(conn, sql, "SESSION_STUDENTS table");
     }
     
+    
+    private void createGeneralQuestionsTable(Connection conn) throws SQLException {
+    	String sql = "CREATE TABLE IF NOT EXISTS GENERAL_QUESTIONS (" +
+    				 "QUESTION_ID INT, " +
+    				 "STUDENT_ID INT, " +
+    				 "PRIMARY KEY (QUESTION_ID, STUDENT_ID), " +
+    				 "FOREIGN KEY (STUDENT_ID) REFERENCES USERS(ID), " +
+    				 "question TEXT, " +
+    				 "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+    				 ")";
+    	
+    	executeUpdate(conn, sql, "GENERAL_QUESTIONS table");
+    }
+    
+    private void createSpecificQuestionsTable(Connection conn) throws SQLException {
+    	String sql = "CREATE TABLE IF NOT EXISTS SPECIFIC_QUESTIONS (" +
+    				 "QUESTION_ID INT, " +
+    				 "STUDENT_ID INT, " +
+    				 "PRIMARY KEY (QUESTION_ID, STUDENT_ID), " +
+    				 "FOREIGN KEY (STUDENT_ID) REFERENCES USERS(ID), " +
+    				 "question TEXT, " +
+    				 "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+    				 ")";
+    	
+    	executeUpdate(conn, sql, "SPECIFIC_QUESTIONS table");
+    }
+    
+    
+    
+    public void addGeneralQuestion(String username, String qBody) throws Exception {
+        // First get the user's ID since the table uses USER_ID as a foreign key
+        String userIdQuery = "SELECT ID FROM USERS WHERE USERNAME = ?";
+        int userId;
+        
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(userIdQuery)) {
+            pstmt.setString(1, username);
+            ResultSet rs = pstmt.executeQuery();
+            if (!rs.next()) {
+                throw new SQLException("User not found: " + username);
+            }
+            userId = rs.getInt("ID");
+        }
+        
+        // Get the next question ID
+        String maxIdQuery = "SELECT MAX(QUESTION_ID) FROM GENERAL_QUESTIONS";
+        int nextQuestionId = 1; // Default start if no questions exist
+        
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement()) {
+            ResultSet rs = stmt.executeQuery(maxIdQuery);
+            if (rs.next() && rs.getObject(1) != null) {
+                nextQuestionId = rs.getInt(1) + 1;
+            }
+        }
+        
+        // Insert the new question
+        String insertQuery = "INSERT INTO GENERAL_QUESTIONS (QUESTION_ID, STUDENT_ID, question) VALUES (?, ?, ?)";
+        
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(insertQuery)) {
+            pstmt.setInt(1, nextQuestionId);
+            pstmt.setInt(2, userId);
+            pstmt.setString(3, encryptField(qBody));
+            
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows == 0) {
+                throw new SQLException("Creating general question failed, no rows affected.");
+            }
+            System.out.println("General question added successfully with ID: " + nextQuestionId);
+        }
+    }
+    
+    public void addSpecificQuestion(String username, String qBody) throws Exception {
+        // First get the user's ID since the table uses USER_ID as a foreign key
+        String userIdQuery = "SELECT ID FROM USERS WHERE USERNAME = ?";
+        int userId;
+        
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(userIdQuery)) {
+            pstmt.setString(1, username);
+            ResultSet rs = pstmt.executeQuery();
+            if (!rs.next()) {
+                throw new SQLException("User not found: " + username);
+            }
+            userId = rs.getInt("ID");
+        }
+        
+        // Get the next question ID
+        String maxIdQuery = "SELECT MAX(QUESTION_ID) FROM SPECIFIC_QUESTIONS";
+        int nextQuestionId = 1; // Default start if no questions exist
+        
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement()) {
+            ResultSet rs = stmt.executeQuery(maxIdQuery);
+            if (rs.next() && rs.getObject(1) != null) {
+                nextQuestionId = rs.getInt(1) + 1;
+            }
+        }
+        
+        // Insert the new question
+        String insertQuery = "INSERT INTO SPECIFIC_QUESTIONS (QUESTION_ID, STUDENT_ID, question) VALUES (?, ?, ?)";
+        
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(insertQuery)) {
+            pstmt.setInt(1, nextQuestionId);
+            pstmt.setInt(2, userId);
+            pstmt.setString(3, encryptField(qBody));
+            
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows == 0) {
+                throw new SQLException("Creating specific question failed, no rows affected.");
+            }
+            System.out.println("Specific question added successfully with ID: " + nextQuestionId);
+        }
+    }
+    
+    public List<String> getGeneralQuestions() throws Exception {
+        List<String> questions = new ArrayList<>();
+        String sql = "SELECT U.USERNAME, Q.question " +
+                     "FROM GENERAL_QUESTIONS Q " +
+                     "JOIN USERS U ON Q.STUDENT_ID = U.ID " +
+                     "ORDER BY Q.created_at DESC";
+                     
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            
+            while (rs.next()) {
+                String username = rs.getString("USERNAME");
+                String questionText = decryptField(rs.getString("question"));
+                questions.add(username + "\n" + questionText);
+            }
+        }
+        return questions;
+    }
+
+    public List<String> getSpecificQuestions() throws Exception {
+        List<String> questions = new ArrayList<>();
+        String sql = "SELECT U.USERNAME, Q.question " +
+                     "FROM SPECIFIC_QUESTIONS Q " +
+                     "JOIN USERS U ON Q.STUDENT_ID = U.ID " +
+                     "ORDER BY Q.created_at DESC";
+                     
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            
+            while (rs.next()) {
+                String username = rs.getString("USERNAME");
+                String questionText = decryptField(rs.getString("question"));
+                questions.add(username + "\n" + questionText);
+            }
+        }
+        return questions;
+    }
     
     //EXECUTES A STATEMENT, PROVIDES UNIQUE ERROR IF IT FAILS
     private void executeUpdate(Connection conn, String sql, String tableName) throws SQLException {
@@ -764,6 +925,15 @@ public class databaseInterface {
         }
     }
    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     /**
      * Encrypts a field value for secure storage in the database.
      * 

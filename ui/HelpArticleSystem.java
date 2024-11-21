@@ -39,13 +39,12 @@ import core.*;
  */
 public class HelpArticleSystem{
 
-    private static final String RED = "#FC3D21";
-    private static final String BLACK = "#000000";
-    
+    private static final String BLUE = "#1C1C1C";
+    private static final String WHITE = "#6BB3E3";    
     private Label titleLabel;
     private VBox mainLayout;
     private HBox buttonBox;
-    
+
     private TableView<Article> articleTable;
     HBox searchBox;
     private databaseInterface dbMan;
@@ -76,11 +75,11 @@ public class HelpArticleSystem{
         
         mainLayout = new VBox(10);
         mainLayout.setPadding(new Insets(20));
-        mainLayout.setStyle("-fx-background-color: " + BLACK + ";");
+        mainLayout.setStyle("-fx-background-color: " + WHITE + ";");
 
         titleLabel = new Label("ARTICLES");
         titleLabel.setFont(Font.font("Helvetica", FontWeight.BOLD, 24));
-        titleLabel.setTextFill(Color.web(RED));
+        titleLabel.setTextFill(Color.web(BLUE));
 
         setupArticleTable();
         setupSearchBox();
@@ -94,6 +93,9 @@ public class HelpArticleSystem{
         Button searchButton = createStylizedButton("SEARCH");
         Button deleteAllArticlesButton = createStylizedButton("ERASE ALL ARTICLES");
         Button quitButton = createStylizedButton("EXIT");
+        Button searchButton = createStylizedButton("SEARCH");
+        Button deleteAllArticlesButton = createStylizedButton("DELETE ALL ARTICLES");
+        
         
         addButton.setOnAction(e -> showArticleCreationScreen());
         displayButton.setOnAction(e -> displaySelectedArticle());
@@ -105,6 +107,7 @@ public class HelpArticleSystem{
         deleteAllArticlesButton.setOnAction(e -> deleteAllArticles());
         quitButton.setOnAction(e-> handleQuit());
         
+
         buttonBox = new HBox(10);
         
         int access = dbMan.groupAccess(currentUser.getUsername(), currentGroup);
@@ -134,7 +137,7 @@ public class HelpArticleSystem{
      */
     private Button createStylizedButton(String text) {
         Button button = new Button(text);
-        button.setStyle("-fx-background-color: " + RED + ";" +
+        button.setStyle("-fx-background-color: " + BLUE + ";" +
                         "-fx-text-fill: white;" +
                         "-fx-font-weight: bold;" +
                         "-fx-font-size: 14px;" +
