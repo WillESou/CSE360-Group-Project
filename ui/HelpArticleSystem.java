@@ -117,7 +117,21 @@ public class HelpArticleSystem{
         	buttonBox.getChildren().add(addButton);
         }
         
-        buttonBox.getChildren().addAll(displayButton, deleteButton, deleteAllArticlesButton, refreshButton, backupButton, restoreButton, searchButton, quitButton);
+        if(currentUser.hasRole(ROLE.ADMIN)) {
+        	buttonBox.getChildren().addAll(deleteButton, deleteAllArticlesButton, refreshButton, backupButton, restoreButton, searchButton, quitButton);
+        }
+        else if(currentUser.hasRole(ROLE.INSTRUCTOR)) {
+            buttonBox.getChildren().addAll(displayButton, deleteButton, deleteAllArticlesButton, refreshButton, backupButton, restoreButton, searchButton, quitButton);
+
+        }
+        else if(currentUser.hasRole(ROLE.STUDENT))
+        {
+            buttonBox.getChildren().addAll(displayButton,refreshButton, searchButton, quitButton);
+
+        }
+        
+        
+       // buttonBox.getChildren().addAll(displayButton, deleteButton, deleteAllArticlesButton, refreshButton, backupButton, restoreButton, searchButton, quitButton);
 
         mainLayout.getChildren().addAll(titleLabel,searchBox, articleTable, buttonBox);
 
@@ -405,7 +419,24 @@ public class HelpArticleSystem{
 			}
 		});
         
-        searchBox.getChildren().setAll(new Label("SEARCH BY KEYWORD:"), searchField, searchButton, chooseGroup, createGroup);
+        if(currentUser.hasRole(ROLE.ADMIN)) {
+            searchBox.getChildren().setAll(new Label("SEARCH BY KEYWORD:"), searchField, searchButton, chooseGroup, createGroup);
+
+        }
+        else if(currentUser.hasRole(ROLE.INSTRUCTOR)) {
+
+            searchBox.getChildren().setAll(new Label("SEARCH BY KEYWORD:"), searchField, searchButton, chooseGroup);
+
+        }
+        else if(currentUser.hasRole(ROLE.STUDENT))
+        {
+            searchBox.getChildren().setAll(new Label("SEARCH BY KEYWORD:"), searchField, searchButton);
+
+        	
+        }
+        
+        
+        //searchBox.getChildren().setAll(new Label("SEARCH BY KEYWORD:"), searchField, searchButton, chooseGroup, createGroup);
         
         User currentUser = Source.getUIManager().getUser();
         int access = dbMan.groupAccess(currentUser.getUsername(), currentGroup);
