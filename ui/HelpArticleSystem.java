@@ -93,9 +93,7 @@ public class HelpArticleSystem{
         Button searchButton = createStylizedButton("SEARCH");
         Button deleteAllArticlesButton = createStylizedButton("ERASE ALL ARTICLES");
         Button quitButton = createStylizedButton("EXIT");
-        Button searchButton = createStylizedButton("SEARCH");
-        Button deleteAllArticlesButton = createStylizedButton("DELETE ALL ARTICLES");
-        
+       
         
         addButton.setOnAction(e -> showArticleCreationScreen());
         displayButton.setOnAction(e -> displaySelectedArticle());
