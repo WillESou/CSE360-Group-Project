@@ -113,7 +113,7 @@ public class HelpArticleSystem{
         
         if (access == 2
         		|| ((!currentUser.hasRole(ROLE.STUDENT)) && access == 3)
-        		|| access == -1) {
+        		|| (!currentUser.hasRole(ROLE.STUDENT)) && access == -1) {
         	buttonBox.getChildren().add(addButton);
         }
         
@@ -434,7 +434,7 @@ public class HelpArticleSystem{
         }
         else if(currentUser.hasRole(ROLE.STUDENT))
         {
-            searchBox.getChildren().setAll(new Label("SEARCH BY KEYWORD:"), searchField, searchButton);
+            searchBox.getChildren().setAll(new Label("SEARCH BY KEYWORD:"), searchField, searchButton, chooseGroup);
 
         	
         }
