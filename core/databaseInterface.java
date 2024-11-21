@@ -245,6 +245,11 @@ public class databaseInterface {
         String userIdQuery = "SELECT ID FROM USERS WHERE USERNAME = ?";
         int userId;
         
+        if(qBody.isEmpty() || (qBody == null)) {
+        	throw new Exception("addGeneralQuestion was called with blank question body!");
+        }
+        
+        
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(userIdQuery)) {
             pstmt.setString(1, username);

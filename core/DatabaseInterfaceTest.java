@@ -9,7 +9,7 @@ public class DatabaseInterfaceTest {
 
 	    private Connection connection;
 	    private databaseInterface dbInterface;
-
+	    private UserManager userMan;
 	    @Before
 	    public void setUp() throws Exception {
 	        // Initialize in-memory database
@@ -17,7 +17,10 @@ public class DatabaseInterfaceTest {
 
 	        // Create an instance of DatabaseInterface with overridden methods for testing
 	        dbInterface = new databaseInterface();
-
+	        
+	        // Create an instance of UserManager
+	        userMan = new UserManager();
+	        
 	        // Create necessary tables
 	        createTables();
 
@@ -66,17 +69,18 @@ public class DatabaseInterfaceTest {
 	    }
 
 	    private void insertTestUser() throws SQLException {
-	        String insertUserSql = "INSERT INTO USERS (USERNAME, PASSWORD) VALUES ('testuser', 'password');";
-	        Statement stmt = connection.createStatement();
-	        stmt.executeUpdate(insertUserSql);
-	        stmt.close();
+	    	
+	    	if(userMan.getUserByUsername("testuser") == null) {
+		        userMan.createUser("testuser", "test@asu.edu", "test", "test");
+
+	    	}
 	    }
 
 	    @Test
 	    public void testAddGeneralQuestionValid() throws Exception {
 	        dbInterface.addGeneralQuestion("testuser", "What is Java?");
 	        // Verify that the question was added
-	        verifyQuestionCount("GENERAL_QUESTIONS", 1);
+	        verifyQuestionCount("GENERAL_QUESTIONS", getQuestionCount("GENERAL_QUESTIONS") + 1);
 	    }
 
 	    @Test
@@ -92,9 +96,14 @@ public class DatabaseInterfaceTest {
 
 	    @Test
 	    public void testAddGeneralQuestionEmptyBody() throws Exception {
-	        dbInterface.addGeneralQuestion("testuser", "");
-	        // Verify that the question was added
-	        verifyQuestionCount("GENERAL_QUESTIONS", 1);
+	       
+	    	try {
+	    		dbInterface.addGeneralQuestion("testuser", "");
+	    		fail("Excepted Exception was not thrown");
+	    	}catch (Exception e) {
+	    		assertTrue(e.getMessage().contains("addGeneralQuestion was called with blank question body!"));
+	    	}
+	    	
 	    }
 
 	    @Test(expected = NullPointerException.class)
@@ -106,7 +115,7 @@ public class DatabaseInterfaceTest {
 	    public void testAddSpecificQuestionValid() throws Exception {
 	        dbInterface.addSpecificQuestion("testuser", "Explain polymorphism.");
 	        // Verify that the question was added
-	        verifyQuestionCount("SPECIFIC_QUESTIONS", 1);
+	        verifyQuestionCount("SPECIFIC_QUESTIONS", getQuestionCount("SPECIFIC_QUESTIONS") + 1);
 	    }
 
 	    @Test
@@ -128,7 +137,7 @@ public class DatabaseInterfaceTest {
 
 	    @Test
 	    public void testGetGeneralQuestionsWithQuestions() throws Exception {
-	        dbInterface.addGeneralQuestion("testuser", "What is Java?");
+	    	dbInterface.addGeneralQuestion("testuser", "What is Java?");
 	        dbInterface.addGeneralQuestion("testuser", "Explain OOP.");
 	        List<String> questions = dbInterface.getGeneralQuestions();
 	        assertNotNull(questions);
@@ -145,6 +154,16 @@ public class DatabaseInterfaceTest {
 	            int count = rs.getInt(1);
 	            assertEquals(expectedCount, count);
 	        }
+	    }
+	    
+	    private int getQuestionCount(String tableName) throws SQLException {
+	    	String query = "SELECT COUNT(*) FROM " + tableName + ";";
+	        try (Statement stmt = connection.createStatement();
+	             ResultSet rs = stmt.executeQuery(query)) {
+	            	assertTrue(rs.next());
+	            	int count = rs.getInt(1);
+	            	return count;
+	        	}
 	    }
 
 }
