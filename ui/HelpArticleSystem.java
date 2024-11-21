@@ -30,11 +30,7 @@ import java.io.File;
 import java.sql.SQLException;
 import java.util.List;
 
-import core.Article;
-import core.BackupManager;
-import core.Source;
-import core.databaseInterface;
-import core.ROLE;
+import core.*;
 
 /**
  * This class represents the main application for the Help Article Management System.
@@ -45,32 +41,44 @@ public class HelpArticleSystem{
 
     private static final String RED = "#FC3D21";
     private static final String BLACK = "#000000";
+    
+    private Label titleLabel;
+    private VBox mainLayout;
+    private HBox buttonBox;
+    
     private TableView<Article> articleTable;
     HBox searchBox;
     private databaseInterface dbMan;
     private BackupManager backupMan;
+    private UserManager userMan;
     private String currentGroup = "General";
+    private boolean isSpecial = false;
+    private User currentUser;
     
     /**
      * The main entry point for the JavaFX application.
      * 
      * @param primaryStage The primary stage for this application
+     * @throws Exception 
+     * @throws SQLException 
      */
-    public void show() {
+    public void show() throws SQLException, Exception {
         // Initialize database and backup managers
     	try {
 			dbMan = new databaseInterface();
 			backupMan = new BackupManager(dbMan);
+			userMan = new UserManager();
+			currentUser = Source.getUIManager().getUser();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
     
         
-        VBox mainLayout = new VBox(10);
+        mainLayout = new VBox(10);
         mainLayout.setPadding(new Insets(20));
         mainLayout.setStyle("-fx-background-color: " + BLACK + ";");
 
-        Label titleLabel = new Label("ARTICLES");
+        titleLabel = new Label("ARTICLES");
         titleLabel.setFont(Font.font("Helvetica", FontWeight.BOLD, 24));
         titleLabel.setTextFill(Color.web(RED));
 
@@ -97,8 +105,18 @@ public class HelpArticleSystem{
         deleteAllArticlesButton.setOnAction(e -> deleteAllArticles());
         quitButton.setOnAction(e-> handleQuit());
         
-        HBox buttonBox = new HBox(10);
-        buttonBox.getChildren().addAll(addButton, displayButton, deleteButton, deleteAllArticlesButton, refreshButton, backupButton, restoreButton, searchButton, quitButton);
+        buttonBox = new HBox(10);
+        
+        int access = dbMan.groupAccess(currentUser.getUsername(), currentGroup);
+        System.out.println(access);
+        
+        if (access == 2
+        		|| ((!currentUser.hasRole(ROLE.STUDENT)) && access == 3)
+        		|| access == -1) {
+        	buttonBox.getChildren().add(addButton);
+        }
+        
+        buttonBox.getChildren().addAll(displayButton, deleteButton, deleteAllArticlesButton, refreshButton, backupButton, restoreButton, searchButton, quitButton);
 
         mainLayout.getChildren().addAll(titleLabel,searchBox, articleTable, buttonBox);
 
@@ -180,11 +198,158 @@ public class HelpArticleSystem{
                 currentGroup = roleComboBox.getValue();
             }
         });
-        refreshArticleList();
+        show();
+    }
+    
+    private void createGroup() throws Exception {
+    	Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Group Creation");
+        dialog.setHeaderText("Create a Group:");
+
+        // Create the content for the dialog
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(10));
+        content.setAlignment(Pos.CENTER);
+
+        // Create role selection combo box
+        TextField nGroupName = new TextField();
+        CheckBox specCheck = new CheckBox("Special Group");
+        
+        content.getChildren().addAll(
+            new Label("Group Name:"),
+            nGroupName,
+            specCheck
+        );
+
+        // Set the content and add buttons
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        // Show the dialog and handle the result
+        dialog.showAndWait().ifPresent(buttonType -> {
+            if (buttonType == ButtonType.OK) {
+                currentGroup = nGroupName.getText();
+                isSpecial = specCheck.isSelected();
+                
+                try {
+					dbMan.createGroup(currentGroup, isSpecial);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+            }
+        });
+        show();
+    }
+    
+    private void addToGroup() throws Exception {
+    	Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Add User to Group");
+        dialog.setHeaderText("User Name to Add:");
+
+        // Create the content for the dialog
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(10));
+        content.setAlignment(Pos.CENTER);
+
+        // Create role selection combo box
+        TextField userName = new TextField();
+        CheckBox admin = new CheckBox("Admin");
+        
+        content.getChildren().addAll(
+            new Label("User Name:"),
+            userName,
+            admin
+        );
+
+        // Set the content and add buttons
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        // Show the dialog and handle the result
+        dialog.showAndWait().ifPresent(buttonType -> {
+            if (buttonType == ButtonType.OK) {
+            	User user = null;
+                try {
+					user = userMan.getUserByUsername(userName.getText());
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+                boolean isAdmin = admin.isSelected();
+                
+                try {
+                	if (user == null) {
+                		System.out.println("User Does not Exist.");
+                	} else {
+                		dbMan.addUserGroup(user, isAdmin, currentGroup);
+                	}
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+            }
+        });
+        show();
+    } 
+    
+    private void manageGroup() throws SQLException, Exception {
+    	Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Manage User in Group");
+        dialog.setHeaderText("User Name to Manage:");
+
+        // Create the content for the dialog
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(10));
+        content.setAlignment(Pos.CENTER);
+
+        // Create role selection combo box
+        TextField userName = new TextField();
+        
+        ChoiceBox<String> choice = new ChoiceBox<String>();
+        choice.getItems().addAll("Delete", "Toggle Admin");
+        
+        content.getChildren().addAll(
+            new Label("User Name:"),
+            userName,
+            choice
+        );
+
+        // Set the content and add buttons
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        // Show the dialog and handle the result
+        dialog.showAndWait().ifPresent(buttonType -> {
+            if (buttonType == ButtonType.OK) {
+            	User user = null;
+                try {
+					user = userMan.getUserByUsername(userName.getText());
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+                String choiceS = choice.getSelectionModel().getSelectedItem();
+                
+                try {
+                	if (user == null) {
+                		System.out.println("User Does not Exist.");
+                	} else if (choiceS.equals("Delete")) {
+                		dbMan.deleteUserFromGroup(user.getUsername(), currentGroup);
+                	} else if (choiceS.equals("Toggle Admin")) {
+                		dbMan.toggleAdmin(user, currentGroup);
+                	}
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+            }
+        });
+        show();
     }
 	
     
-    private void setupSearchBox() {
+    private void setupSearchBox() throws SQLException, Exception {
         searchBox = new HBox(10);
         searchBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         
@@ -206,7 +371,47 @@ public class HelpArticleSystem{
 			}
 		});
         
-        searchBox.getChildren().addAll(new Label("SEARCH BY KEYWORD:"), searchField, searchButton, chooseGroup);
+        Button createGroup = createStylizedButton("Create Group");
+        createGroup.setOnAction(e -> {
+			try {
+				createGroup();
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		});
+        
+        Button addToGroup = createStylizedButton("Add User to Group");
+        addToGroup.setOnAction(e -> {
+			try {
+				addToGroup();
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		});
+        
+        Button manageGroup = createStylizedButton("Manage Group Users");
+        manageGroup.setOnAction(e -> {
+			try {
+				manageGroup();
+			} catch (SQLException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		});
+        
+        searchBox.getChildren().setAll(new Label("SEARCH BY KEYWORD:"), searchField, searchButton, chooseGroup, createGroup);
+        
+        User currentUser = Source.getUIManager().getUser();
+        int access = dbMan.groupAccess(currentUser.getUsername(), currentGroup);
+        
+        if (access == 1 || access == 2) {
+        	searchBox.getChildren().addAll(addToGroup, manageGroup);
+        }
     }
     
     
@@ -252,7 +457,7 @@ public class HelpArticleSystem{
      * Shows the article creation screen.
      */
     private void showArticleCreationScreen() {
-        ArticleCreationScreen creationScreen = new ArticleCreationScreen(dbMan);
+        ArticleCreationScreen creationScreen = new ArticleCreationScreen(dbMan, currentGroup, isSpecial);
         creationScreen.show();
     }
 
@@ -263,7 +468,12 @@ public class HelpArticleSystem{
         Article selectedArticle = articleTable.getSelectionModel().getSelectedItem();
         if (selectedArticle != null) {
            try {
-			ArticleDisplayScreen dispArticle = new ArticleDisplayScreen(dbMan.getArticle(selectedArticle.getId()));
+        	   if (dbMan.groupAccess(Source.getUIManager().getUser().getUsername(), currentGroup) != 1) {
+        		   ArticleDisplayScreen dispArticle = new ArticleDisplayScreen(dbMan.getArticle(selectedArticle.getId()));
+        	   } else {
+        		   ArticleDisplayScreen dispArticle = new ArticleDisplayScreen(dbMan.getEncArticle(selectedArticle.getId()));
+        	   }
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -313,6 +523,7 @@ public class HelpArticleSystem{
         try {
             List<Article> articles = dbMan.filterGroup(currentGroup);
             articleTable.setItems(FXCollections.observableArrayList(articles));
+            
         } catch (Exception e) {
             showAlert("Refresh Error", "Failed to refresh article list: " + e.getMessage());
         }

@@ -104,7 +104,9 @@ public class BackupManager {
         sb.append(encryptField(new String(article.getAbstract()))).append("|");
         sb.append(encryptField(new String(article.getKeywords()))).append("|");
         sb.append(encryptField(new String(article.getBody()))).append("|");
-        sb.append(encryptField(new String(article.getReferences())));
+        sb.append(encryptField(new String(article.getReferences()))).append("|");
+        sb.append(encryptField(new String(article.getGroup())));
+        
         return sb.toString();
     }
 
@@ -117,6 +119,7 @@ public class BackupManager {
      */
     private Article decryptArticle(String encryptedArticle) throws Exception {
         String[] fields = encryptedArticle.split("\\|");
+        
         return new Article(
             decryptField(fields[0]).toCharArray(),
             decryptField(fields[1]).toCharArray(),
@@ -124,7 +127,7 @@ public class BackupManager {
             decryptField(fields[3]).toCharArray(),
             decryptField(fields[4]).toCharArray(),
             decryptField(fields[5]).toCharArray(),
-            null
+            decryptField(fields[6]).toCharArray()
         );
     }
 

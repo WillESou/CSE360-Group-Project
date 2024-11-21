@@ -36,7 +36,8 @@ public class Article {
      * @param body The main body of the article
      * @param references The references of the article
      */
-    public Article(char[] title, char[] authors, char[] abstractBody, char[] keywords, char[] body, char[] references, char[] group) {
+    public Article(char[] title, char[] authors, char[] abstractBody, char[] keywords
+    		, char[] body, char[] references, char[] group) {
         this.title = title;
         this.authors = authors;
         this.abstractBody = abstractBody;

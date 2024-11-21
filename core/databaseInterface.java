@@ -75,6 +75,7 @@ public class databaseInterface {
             createUserSkillsTable(connection);
 
             createArticleTables(connection);
+            createGroupTable(connection);
             createGenArticlesTable(connection);
 
             createInviteCodesTable(connection);
@@ -366,25 +367,110 @@ public class databaseInterface {
      * 
      * @throws SQLException If there's an error executing the SQL statement
      */
-    private void createGenGroupTable(Connection conn) throws SQLException {
-        String sql = "CREATE TABLE IF NOT EXISTS general_groups ("
-        		+ "group VARCHAR(255) NOT NULL, "
-                + "user VARCHAR(255) UNIQUE NOT NULL";
-        executeUpdate(conn, sql, "GROUPS table");
+    private void createGroupTable(Connection conn) throws SQLException {
+        String sql = "CREATE TABLE IF NOT EXISTS group_access ("
+        		+ "GROUP_NAME VARCHAR(255) NOT NULL, "
+                + "USER_NAME VARCHAR(255) NOT NULL,"
+        		/**
+        		 * For any group, 0 means not an admin, 1 means admin,
+        		 * 2 means instructor admin, and 3 means the group is general.
+        		 */
+                + "ACCESS INT"
+        		+ ")";
+        executeUpdate(conn, sql, "group_access table");
+    }
+    
+    /**
+     * Adds a group
+     * 
+     * @param groupName - The name of the group the article is added to
+     * @param isSpecial - Whether the group added is a special access group
+     * @throws Exception If there's an error adding the article to the database
+     */
+    public void createGroup(String groupName, boolean isSpecial) throws SQLException, Exception {
+    	User writer = Source.getUIManager().getUser();
+    	
+    	String sql = "INSERT INTO group_access (GROUP_NAME, USER_NAME, ACCESS) VALUES (?, ?, ?)";
+    	try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
+    		pstmt.setString(1, encryptField(groupName));
+    		
+    		if (!isSpecial) { // General Group
+    			pstmt.setString(2, ("ALL"));
+    			pstmt.setInt(3, 3);
+    		} else if (writer.hasRole(ROLE.INSTRUCTOR)) { // The creator is an instructor, and is therefore the first instructor added.
+    			pstmt.setString(2, (writer.getUsername()));
+    			pstmt.setInt(3, 2);
+    		} else { // The creator is not an instructor, and cannot see the articles.
+    			pstmt.setString(2, (writer.getUsername()));
+    			pstmt.setInt(3, 1);
+    		}
+    		
+    		pstmt.executeUpdate();
+    	}
     }
     
     /**
      * Adds a user to a group.
      * 
      * @param userName - The name of the user to join a group
+     * @param access - The access level that the user is given.
      * @param groupName - The name of the group the article is added to
      * @throws Exception If there's an error adding the article to the database
      */
-    private void addUserGroup(String userName, String groupName) throws SQLException, Exception {
-    	String sql = "INSERT INTO general_groups (group, user) VALUES (?, ?)";
+    public void addUserGroup(User user, boolean admin, String groupName) throws SQLException, Exception {
+    	
+    	String sql = "INSERT INTO group_access (GROUP_NAME, USER_NAME, ACCESS) VALUES (?, ?, ?)";
     	try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
     		pstmt.setString(1, encryptField(groupName));
-    		pstmt.setString(2, encryptField(userName));;
+    		pstmt.setString(2, (user.getUsername()));
+    		
+    		int access = 0;
+    		if (user.hasRole(ROLE.INSTRUCTOR) && admin) {
+    			access = 2;
+    		} else if (user.hasRole(ROLE.ADMIN) && admin) {
+    			access = 1;
+    		}
+    		pstmt.setInt(3, access);
+    		
+    		pstmt.executeUpdate();
+    	}
+    }
+    
+    public void toggleAdmin(User user, String groupName) throws SQLException, Exception {
+    	
+    	String sql = "UPDATE group_access SET GROUP_NAME = ?, USER_NAME = ?, ACCESS = ?";
+    	try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
+    		pstmt.setString(1, encryptField(groupName));
+    		pstmt.setString(2, (user.getUsername()));
+    		
+    		int access = groupAccess(user.getUsername(), groupName);
+    		if (access == 2 || access == 1) {
+    			access = 0;
+    		} else if (access == 0 && user.hasRole(ROLE.INSTRUCTOR)) {
+    			access = 2;
+    		} else if (access == 0 && user.hasRole(ROLE.ADMIN)) {
+    			access = 1;
+    		} else {
+    			System.out.println("User Cannot be Made Admin.");
+    		}
+    		
+    		pstmt.setInt(3, access);
+    		pstmt.executeUpdate();
+    	}
+    }
+    
+    /**
+     * Deletes a user to a group.
+     * 
+     * @param userName - The name of the user to be deleted
+     * @param groupName - The name of the group the user is deleted from
+     * @throws Exception If there's an error adding the article to the database
+     */
+    public void deleteUserFromGroup(String userName, String groupName) throws SQLException, Exception {
+    	String sql = "DELETE FROM group_access WHERE GROUP_NAME = ? AND USER_NAME = ?";
+    	try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
+    		pstmt.setString(1, encryptField(groupName));
+    		pstmt.setString(2, (userName));
     		
     		pstmt.executeUpdate();
     	}
@@ -397,21 +483,42 @@ public class databaseInterface {
      * @param groupName - The name of the group the article is added to
      * @throws Exception If there's an error adding the article to the database
      */
-    private boolean userInGroup(String userName, String groupName) throws SQLException, Exception {
+    public boolean userInGroup(String userName, String groupName) throws SQLException, Exception {
     	
-    	String sql = "SELECT group, user FROM general_articles";
+    	String sql = "SELECT GROUP_NAME, USER_NAME, ACCESS FROM group_access";
     	 try (Statement stmt = getConnection().createStatement();
                  ResultSet rs = stmt.executeQuery(sql)) {
                 while (rs.next()) {
-                	String decryptedGroup = decryptField(rs.getString("group"));
-                	String decryptedUser = decryptField(rs.getString("user"));
-                	if (decryptedGroup.equals(groupName) && 
-                			decryptedUser.equals(userName)) {
+                	String decryptedGroup = decryptField(rs.getString("GROUP_NAME"));
+                	String user = (rs.getString("USER_NAME"));
+                	if ((decryptedGroup.equals(groupName) && 
+                			(user.equals(userName) && rs.getInt("ACCESS") != 1)
+                			|| user.equals("ALL"))) {
                 		return true;
                 	}
                 }
     	 }
     	 return false;
+    }
+    
+    public int groupAccess(String userName, String groupName) throws SQLException, Exception {
+    	
+    	String sql = "SELECT GROUP_NAME, USER_NAME, ACCESS FROM group_access";
+    	 try (Statement stmt = getConnection().createStatement();
+                 ResultSet rs = stmt.executeQuery(sql)) {
+                while (rs.next()) {
+                	String decryptedGroup = decryptField(rs.getString("GROUP_NAME"));
+                	String user = (rs.getString("USER_NAME"));
+                	if (decryptedGroup.equals(groupName) && 
+                			user.equals(userName)) {
+                		return (rs.getInt("ACCESS"));
+                	} else if (decryptedGroup.equals(groupName) &&
+                			user.equals("ALL")) {
+                		return 3;
+                	}
+                }
+    	 }
+    	 return -1;
     }
     
     /**
@@ -420,11 +527,11 @@ public class databaseInterface {
      * @throws SQLException If there's an error executing the SQL statement
      */
     private void createGenArticlesTable(Connection conn) throws SQLException {
-        String sql = "CREATE TABLE IF NOT EXISTS general_articles ("
+        String sql = "CREATE TABLE IF NOT EXISTS group_articles ("
         		+ "GROUP_NAME VARCHAR(255) NOT NULL, "
                 + "ID INT NOT NULL"
         		+ ")";
-        executeUpdate(conn, sql, "general_articles table");
+        executeUpdate(conn, sql, "group_articles table");
     }
     
     /**
@@ -435,10 +542,10 @@ public class databaseInterface {
      * @throws Exception If there's an error adding the article to the database
      */
     private void addArtGroup(int id, String groupName) throws SQLException, Exception {
-    	String sql = "INSERT INTO general_articles (GROUP_NAME, ID) VALUES (?, ?)";
+    	String sql = "INSERT INTO group_articles (GROUP_NAME, ID) VALUES (?, ?)";
     	try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
     		pstmt.setString(1, encryptField(groupName));
-    		pstmt.setInt(2, id);;
+    		pstmt.setInt(2, id);
     		
     		pstmt.executeUpdate();
     	}
@@ -446,21 +553,26 @@ public class databaseInterface {
     }
     
     /*
-     * Retrieves a list of all general groups.
+     * Retrieves a list of all general groups, as well as groups the user has access to.
      * 
      * @return A list of all Group Name strings.
      * @throws Exception
      */
     public List<String> listGroups() throws Exception{
+    	User currentUser = Source.getUIManager().getUser();
+    	
     	List<String> ret = new ArrayList<String>();
     	ret.add("General");
-    	String sql = "SELECT GROUP_NAME FROM general_articles";
+    	String sql = "SELECT GROUP_NAME, USER_NAME, ACCESS FROM group_access";
     	
     	try (Statement stmt = getConnection().createStatement();
                 ResultSet rs = stmt.executeQuery(sql)) {
                while (rs.next()) {
             	   if (!ret.contains(decryptField(rs.getString("GROUP_NAME")))) {
-            		   ret.add(decryptField(rs.getString("GROUP_NAME")));
+            		   if (userInGroup(currentUser.getUsername(), decryptField(rs.getString("GROUP_NAME")))
+            				   || currentUser.hasRole(ROLE.ADMIN)) {
+            			   ret.add(decryptField(rs.getString("GROUP_NAME")));
+            		   }
             	   }
                }
     	}
@@ -468,24 +580,36 @@ public class databaseInterface {
     }
     
     /**
-     * Retrieves all articles in a general group by name
+     * Retrieves all articles in a group by name
      * 
      * @param groupName - The name of the group to filter from
      * @throws Exception
      */
     public List<Article> filterGroup(String groupName) throws SQLException, Exception {
+    	User currentUser = Source.getUIManager().getUser();
+    	
     	List<Article> matchingArticles = new ArrayList<>();
-        String sql = "SELECT GROUP_NAME, ID FROM general_articles";
+        String sql = "SELECT GROUP_NAME, ID FROM group_articles";
         
         try (Statement stmt = getConnection().createStatement();
                 ResultSet rs = stmt.executeQuery(sql)) {
                while (rs.next()) {
-                   // Decrypt and check keywords
+
                    String decryptedGroup = decryptField(rs.getString("GROUP_NAME")).toLowerCase();
+                   
                    if (decryptedGroup.equals(groupName.toLowerCase())) {
-                       Article article = getArticle(rs.getInt("ID"));
-                       article.setId(rs.getInt("ID"));
-                       matchingArticles.add(article);
+                	   
+                	   int access = groupAccess(currentUser.getUsername(), groupName);
+                	   
+                	   if (access != 1) {
+                		   Article article = getArticle(rs.getInt("ID"));
+                		   article.setId(rs.getInt("ID"));
+                           matchingArticles.add(article);
+                	   } else {
+                		   Article article = getEncArticle(rs.getInt("ID"));
+                		   article.setId(rs.getInt("ID"));
+                           matchingArticles.add(article);
+                	   }
                    }
                }
            }
@@ -505,7 +629,7 @@ public class databaseInterface {
             System.err.println("Error clearing articles: " + e.getMessage());
             throw e;
         }
-        sql = "DELETE FROM general_articles";
+        sql = "DELETE FROM group_articles";
         try (Statement stmt = getConnection().createStatement()) {
             int rowsAffected = stmt.executeUpdate(sql);
             System.out.println("Cleared " + rowsAffected + " groups from the database.");
@@ -524,7 +648,7 @@ public class databaseInterface {
      */
     public Article getArticle(int id) throws Exception {
     	String group = "General";
-    	String sql = "SELECT * FROM general_articles WHERE ID = ?";
+    	String sql = "SELECT * FROM group_articles WHERE ID = ?";
         try (PreparedStatement pstmtG = getConnection().prepareStatement(sql)) {
             pstmtG.setInt(1, id);
             try (ResultSet rsG = pstmtG.executeQuery()) {
@@ -544,6 +668,46 @@ public class databaseInterface {
                         decryptField(rs.getString("abstract")).toCharArray(),
                         decryptField(rs.getString("keywords")).toCharArray(),
                         decryptField(rs.getString("body")).toCharArray(),
+                        decryptField(rs.getString("references")).toCharArray(),
+                        group.toCharArray()
+                    );
+                    nArticle.setId(rs.getInt("id"));
+                    return nArticle;
+                }
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Retrieves an encrypted article by its ID.
+     * 
+     * @param id The ID of the article to retrieve
+     * @return The Article object if found, null otherwise
+     * @throws Exception If there's an error retrieving the article from the database
+     */
+    public Article getEncArticle(int id) throws Exception {
+    	String group = "General";
+    	String sql = "SELECT * FROM group_articles WHERE ID = ?";
+        try (PreparedStatement pstmtG = getConnection().prepareStatement(sql)) {
+            pstmtG.setInt(1, id);
+            try (ResultSet rsG = pstmtG.executeQuery()) {
+                if (rsG.next()) {
+                	group = decryptField(rsG.getString("GROUP_NAME"));
+                }
+            }
+        }
+        sql = "SELECT * FROM help_articles WHERE id = ?";
+        try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
+            pstmt.setInt(1, id);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    Article nArticle = new Article(
+                        decryptField(rs.getString("title")).toCharArray(),
+                        decryptField(rs.getString("authors")).toCharArray(),
+                        decryptField(rs.getString("abstract")).toCharArray(),
+                        decryptField(rs.getString("keywords")).toCharArray(),
+                        rs.getString("body").toCharArray(),
                         decryptField(rs.getString("references")).toCharArray(),
                         group.toCharArray()
                     );
@@ -589,7 +753,7 @@ public class databaseInterface {
             pstmt.execute();
             System.out.println("Article id: " + id + " deleted successfully");
         }
-        sql = "DELETE FROM general_articles WHERE ID = ?";
+        sql = "DELETE FROM group_articles WHERE ID = ?";
         try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
             pstmt.setInt(1, id);
             pstmt.execute();

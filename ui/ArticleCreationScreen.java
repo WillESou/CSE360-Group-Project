@@ -16,6 +16,9 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+
+import java.sql.SQLException;
+
 import core.Article;
 import core.databaseInterface;
 
@@ -28,14 +31,20 @@ public class ArticleCreationScreen {
     private TextField titleField, authorsField, keywordsField, groupField;
     private TextArea abstractArea, bodyArea, referencesArea;
     private databaseInterface dbMan;
+    private String groupName;
+    private boolean isSpecial;
+    private HelpArticleSystem ref;
     
     /**
      * Constructs a new ArticleCreationScreen.
      * 
      * @param dbMan The DatabaseManager instance for saving articles
      */
-    public ArticleCreationScreen(databaseInterface dbMan) {
+    public ArticleCreationScreen(databaseInterface dbMan, String groupName, boolean isSpecial) {
         this.dbMan = dbMan;
+        this.groupName = groupName;
+        this.isSpecial = isSpecial;
+        ref = new HelpArticleSystem();
     	
     	stage = new Stage();
         stage.setTitle("Create Article");
@@ -50,7 +59,6 @@ public class ArticleCreationScreen {
         abstractArea = createStylizedTextArea("Abstract");
         bodyArea = createStylizedTextArea("Body");
         referencesArea = createStylizedTextArea("References");
-        groupField = createStylizedTextField("Group (Optional)");
 
         Button saveButton = new Button("SAVE ARTICLE");
         saveButton.setStyle("-fx-background-color: #FC3D21; -fx-text-fill: white; -fx-font-weight: bold;");
@@ -59,8 +67,7 @@ public class ArticleCreationScreen {
         layout.getChildren().addAll(
             new Label("CREATE HELP ARTICLE"),
             titleField, authorsField, keywordsField,
-            abstractArea, bodyArea, referencesArea,
-            groupField, saveButton
+            abstractArea, bodyArea, referencesArea, saveButton
         );
 
         Scene scene = new Scene(layout, 600, 800);
@@ -100,9 +107,6 @@ public class ArticleCreationScreen {
     private void saveArticle() {
         // Create a new Article instance with the input data
     	
-    	String groupName = groupField.getText();
-    	if (groupName.isEmpty()) {groupName = "General";}
-    	
         Article newArticle = new Article(
         		titleField.getText().toCharArray(),
         		authorsField.getText().toCharArray(),
@@ -121,6 +125,15 @@ public class ArticleCreationScreen {
 		}
     	
         stage.close();
+        try {
+			ref.show();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 
     /**
