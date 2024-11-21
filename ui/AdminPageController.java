@@ -316,6 +316,7 @@ public class AdminPageController {
                     alert.setTitle("Invite Code Generated");
                     alert.setHeaderText("Share this code with the new user");
                     alert.setContentText("Code: " + generatedCode + "\nRole: " + selectedRole);
+                    System.out.println(generatedCode);
                     
                     // Make the code selectable
                     Label codeLabel = new Label(generatedCode);
