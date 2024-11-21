@@ -334,6 +334,7 @@ public class databaseInterface {
    
 
      /* Retrieves an article if it contains the given keyword
+
      * 
      * @param keyword
      * @return
@@ -616,7 +617,9 @@ public class databaseInterface {
            return matchingArticles;
     }
     
+
      /* Clears all articles from the database.
+
      * 
      * @throws SQLException If there's an error executing the SQL statement
      */
