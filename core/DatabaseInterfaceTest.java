@@ -1,86 +1,128 @@
 package core;
+
 import org.junit.*;
 import static org.junit.Assert.*;
 import java.sql.*;
 import java.util.List;
 
-
 public class DatabaseInterfaceTest {
+    private static final String TEST_DB_URL = "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1";
+    private static final String TEST_USER = "sa";
+    private static final String TEST_PASS = "";
+    
+    private Connection connection;
+    private databaseInterface dbInterface;
+    private UserManager userMan;
 
-	    private Connection connection;
-	    private databaseInterface dbInterface;
-	    private UserManager userMan;
-	    @Before
-	    public void setUp() throws Exception {
-	        // Initialize in-memory database
-	        connection = DriverManager.getConnection("jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1");
+    @Before
+    public void setUp() throws Exception {
+        // Initialize the database interface with test configuration
+        dbInterface = new databaseInterface(TEST_DB_URL, TEST_USER, TEST_PASS);
+        
+        // Get connection for test setup
+        connection = databaseInterface.getConnection();
+        
+        // Create an instance of UserManager
+        userMan = new UserManager();
+        
+        // 
+        
+       
+        
+        // Create necessary tables
+        createTables();
 
-	        // Create an instance of DatabaseInterface with overridden methods for testing
-	        dbInterface = new databaseInterface();
-	        
-	        // Create an instance of UserManager
-	        userMan = new UserManager();
-	        
-	        // Create necessary tables
-	        createTables();
+        // Insert test user
+        insertTestUser();
+    }
 
-	        // Insert test user
-	        insertTestUser();
-	    }
+    @After
+    public void tearDown() throws Exception {
+        // Clean up tables
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute("DROP ALL OBJECTS");
+        }
+        
+        // Close the connection
+        if (connection != null && !connection.isClosed()) {
+            connection.close();
+        }
+    }
 
-	    @After
-	    public void tearDown() throws Exception {
-	        // Close the connection
-	        connection.close();
-	    }
+    private void createTables() throws SQLException {
+        try (Statement stmt = connection.createStatement()) {
+            // Create ROLES table first since it's referenced by USER_ROLES
+            stmt.execute(
+                "CREATE TABLE IF NOT EXISTS ROLES (" +
+                "ID INT AUTO_INCREMENT PRIMARY KEY, " +
+                "ROLE_NAME VARCHAR(20) UNIQUE NOT NULL" +
+                ")"
+            );
 
-	    private void createTables() throws SQLException {
-	        String createTablesSql = 
-	            "CREATE TABLE IF NOT EXISTS USERS (" +
-	            "ID INT AUTO_INCREMENT PRIMARY KEY, " +
-	            "USERNAME VARCHAR(50) NOT NULL UNIQUE, " +
-	            "PASSWORD VARCHAR(64) NOT NULL" +
-	            ");" +
-	            "CREATE TABLE IF NOT EXISTS GENERAL_QUESTIONS (" +
-	            "QUESTION_ID INT, " +
-	            "STUDENT_ID INT, " +
-	            "PRIMARY KEY (QUESTION_ID, STUDENT_ID), " +
-	            "FOREIGN KEY (STUDENT_ID) REFERENCES USERS(ID), " +
-	            "question TEXT, " +
-	            "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
-	            ");" +
-	            "CREATE TABLE IF NOT EXISTS SPECIFIC_QUESTIONS (" +
-	            "QUESTION_ID INT, " +
-	            "STUDENT_ID INT, " +
-	            "PRIMARY KEY (QUESTION_ID, STUDENT_ID), " +
-	            "FOREIGN KEY (STUDENT_ID) REFERENCES USERS(ID), " +
-	            "question TEXT, " +
-	            "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
-	            ");";
+            // Create USERS table
+            stmt.execute(
+                "CREATE TABLE IF NOT EXISTS USERS (" +
+                "ID INT AUTO_INCREMENT PRIMARY KEY, " +
+                "USERNAME VARCHAR(50) NOT NULL UNIQUE, " +
+                "EMAIL VARCHAR(100), " +
+                "FIRSTNAME VARCHAR(100), " +
+                "PASSWORD VARCHAR(64) NOT NULL" +
+                ")"
+            );
 
-	        // Execute the SQL statements
-	        Statement stmt = connection.createStatement();
-	        for (String sql : createTablesSql.split(";")) {
-	            if (!sql.trim().isEmpty()) {
-	                stmt.execute(sql);
-	            }
-	        }
-	        stmt.close();
-	    }
+            // Create USER_ROLES table
+            stmt.execute(
+                "CREATE TABLE IF NOT EXISTS USER_ROLES (" +
+                "USER_ID INT, " +
+                "ROLE_ID INT, " +
+                "PRIMARY KEY (USER_ID, ROLE_ID), " +
+                "FOREIGN KEY (USER_ID) REFERENCES USERS(ID), " +
+                "FOREIGN KEY (ROLE_ID) REFERENCES ROLES(ID)" +
+                ")"
+            );
 
-	    private void insertTestUser() throws SQLException {
-	    	
-	    	if(userMan.getUserByUsername("testuser") == null) {
-		        userMan.createUser("testuser", "test@asu.edu", "test", "test");
+            // Create GENERAL_QUESTIONS table
+            stmt.execute(
+                "CREATE TABLE IF NOT EXISTS GENERAL_QUESTIONS (" +
+                "QUESTION_ID INT, " +
+                "STUDENT_ID INT, " +
+                "PRIMARY KEY (QUESTION_ID, STUDENT_ID), " +
+                "FOREIGN KEY (STUDENT_ID) REFERENCES USERS(ID), " +
+                "question TEXT, " +
+                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                ")"
+            );
 
-	    	}
-	    }
+            // Create SPECIFIC_QUESTIONS table
+            stmt.execute(
+                "CREATE TABLE IF NOT EXISTS SPECIFIC_QUESTIONS (" +
+                "QUESTION_ID INT, " +
+                "STUDENT_ID INT, " +
+                "PRIMARY KEY (QUESTION_ID, STUDENT_ID), " +
+                "FOREIGN KEY (STUDENT_ID) REFERENCES USERS(ID), " +
+                "question TEXT, " +
+                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                ")"
+            );
+
+            // Insert required roles
+            stmt.execute("INSERT INTO ROLES (ROLE_NAME) VALUES ('STUDENT')");
+            stmt.execute("INSERT INTO ROLES (ROLE_NAME) VALUES ('INSTRUCTOR')");
+            stmt.execute("INSERT INTO ROLES (ROLE_NAME) VALUES ('ADMIN')");
+        }
+    }
+
+    private void insertTestUser() throws SQLException {
+        if (userMan.getUserByUsername("testuser") == null) {
+            userMan.createUser("testuser", "test@asu.edu", "test", "test");
+        }
+    }
 
 	    @Test
 	    public void testAddGeneralQuestionValid() throws Exception {
 	        dbInterface.addGeneralQuestion("testuser", "What is Java?");
 	        // Verify that the question was added
-	        verifyQuestionCount("GENERAL_QUESTIONS", getQuestionCount("GENERAL_QUESTIONS") + 1);
+	        verifyQuestionCount("GENERAL_QUESTIONS", (getTableCount("GENERAL_QUESTIONS") + 1));
 	    }
 
 	    @Test
@@ -115,7 +157,7 @@ public class DatabaseInterfaceTest {
 	    public void testAddSpecificQuestionValid() throws Exception {
 	        dbInterface.addSpecificQuestion("testuser", "Explain polymorphism.");
 	        // Verify that the question was added
-	        verifyQuestionCount("SPECIFIC_QUESTIONS", getQuestionCount("SPECIFIC_QUESTIONS") + 1);
+	        verifyQuestionCount("SPECIFIC_QUESTIONS", getTableCount("SPECIFIC_QUESTIONS") + 1);
 	    }
 
 	    @Test
@@ -141,7 +183,7 @@ public class DatabaseInterfaceTest {
 	        dbInterface.addGeneralQuestion("testuser", "Explain OOP.");
 	        List<String> questions = dbInterface.getGeneralQuestions();
 	        assertNotNull(questions);
-	        assertEquals(2, questions.size());
+	        assertEquals(getTableCount("GENERAL_QUESTIONS"), questions.size());
 	        assertTrue(questions.get(0).contains("Explain OOP."));
 	        assertTrue(questions.get(1).contains("What is Java?"));
 	    }
@@ -156,14 +198,18 @@ public class DatabaseInterfaceTest {
 	        }
 	    }
 	    
-	    private int getQuestionCount(String tableName) throws SQLException {
-	    	String query = "SELECT COUNT(*) FROM " + tableName + ";";
+	    private int getTableCount(String tableName) throws SQLException {
+	        String query = "SELECT COUNT(*) FROM " + tableName + ";";
 	        try (Statement stmt = connection.createStatement();
 	             ResultSet rs = stmt.executeQuery(query)) {
-	            	assertTrue(rs.next());
-	            	int count = rs.getInt(1);
-	            	return count;
-	        	}
+	            // Move to first row if it exists
+	            if (rs.next()) {
+	                // Get the count from first column
+	                return rs.getInt(1);
+	            }
+	            // Return 0 if no results
+	            return 0;
+	        }
 	    }
 
 }

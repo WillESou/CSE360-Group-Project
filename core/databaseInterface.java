@@ -44,6 +44,63 @@ public class databaseInterface {
 	private static String jdbcURL = "jdbc:h2:./programDatabase";
 	private static String username = "sa";
 	private static String password = "pass";
+	
+	
+	
+	// Add constructor that allows for test configuration
+    public databaseInterface(String jdbcURL, String username, String password) {
+        databaseInterface.jdbcURL = jdbcURL;
+        databaseInterface.username = username;
+        databaseInterface.password = password;
+        connection = null;
+        try {
+			this.encryptHelper = new EncryptionHelper();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+    
+    // Default constructor for production use
+    public databaseInterface() {
+        this("jdbc:h2:./programDatabase", "sa", "pass");
+        try(Connection connection = DriverManager.getConnection(jdbcURL, username, password)) {
+			System.out.println("Connection to H2 database successful");
+			
+			//Creating all user tables
+			createUsersTable(connection);
+			createRolesTable(connection);
+			populateRolesTable(connection);
+			createUserRolesTable(connection);
+			createSkillsTable(connection);
+			createUserSkillsTable(connection);
+			createArticleTables(connection);
+
+			createGroupTable(connection);
+			createGenArticlesTable(connection);
+
+
+			createInviteCodesTable(connection);
+
+            
+			//Creating questions tables
+			createGeneralQuestionsTable(connection);
+			createSpecificQuestionsTable(connection);
+            
+			//Creating session tables
+			createSessionTable(connection);
+			createSessionStudentsTable(connection);
+            
+            
+			} catch (SQLException e) {
+				e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+    }
+	
+	
+	
 	public static Connection getConnection() throws SQLException {
 	        if (connection == null || connection.isClosed()) {
 	            connection = DriverManager.getConnection(jdbcURL, username, password);
@@ -60,7 +117,8 @@ public class databaseInterface {
             }
         }
     }
-	
+	//OLD
+	/*
 	public databaseInterface() {
 		try(Connection connection = DriverManager.getConnection(jdbcURL, username, password)) {
 			System.out.println("Connection to H2 database successful");
@@ -71,34 +129,34 @@ public class databaseInterface {
 			createRolesTable(connection);
 			populateRolesTable(connection);
 			createUserRolesTable(connection);
-      createSkillsTable(connection);
-      createUserSkillsTable(connection);
-      createArticleTables(connection);
+			createSkillsTable(connection);
+			createUserSkillsTable(connection);
+			createArticleTables(connection);
 
-      createGroupTable(connection);
-      createGenArticlesTable(connection);
+			createGroupTable(connection);
+			createGenArticlesTable(connection);
 
 
-      createInviteCodesTable(connection);
+			createInviteCodesTable(connection);
 
             
-      //Creating questions tables
-      createGeneralQuestionsTable(connection);
-      createSpecificQuestionsTable(connection);
+			//Creating questions tables
+			createGeneralQuestionsTable(connection);
+			createSpecificQuestionsTable(connection);
             
-      //Creating session tables
-      createSessionTable(connection);
-      createSessionStudentsTable(connection);
+			//Creating session tables
+			createSessionTable(connection);
+			createSessionStudentsTable(connection);
             
             
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 	}
 	
-	
+	*/
 	
 	//CREATING USER TABLE
 
