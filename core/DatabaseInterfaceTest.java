@@ -22,6 +22,9 @@ public class DatabaseInterfaceTest {
         // Get connection for test setup
         connection = databaseInterface.getConnection();
         
+        
+        cleanupDatabase();
+        
         // Create an instance of UserManager
         userMan = new UserManager();
         
@@ -36,12 +39,14 @@ public class DatabaseInterfaceTest {
         insertTestUser();
     }
 
+    
+    
+    
+    
     @After
     public void tearDown() throws Exception {
-        // Clean up tables
-        try (Statement stmt = connection.createStatement()) {
-            stmt.execute("DROP ALL OBJECTS");
-        }
+       
+    	cleanupDatabase();
         
         // Close the connection
         if (connection != null && !connection.isClosed()) {
@@ -49,6 +54,14 @@ public class DatabaseInterfaceTest {
         }
     }
 
+    private void cleanupDatabase() throws SQLException {
+        try (Statement stmt = connection.createStatement()) {
+            // Drop all objects in the test database
+            stmt.execute("DROP ALL OBJECTS");
+        }
+    }
+
+    
     private void createTables() throws SQLException {
         try (Statement stmt = connection.createStatement()) {
             // Create ROLES table first since it's referenced by USER_ROLES
