@@ -33,12 +33,12 @@ public class DatabaseInterfaceTest {
 
 	    private void createTables() throws SQLException {
 	        String createTablesSql = 
-	            "CREATE TABLE USERS (" +
+	            "CREATE TABLE IF NOT EXISTS USERS (" +
 	            "ID INT AUTO_INCREMENT PRIMARY KEY, " +
 	            "USERNAME VARCHAR(50) NOT NULL UNIQUE, " +
 	            "PASSWORD VARCHAR(64) NOT NULL" +
 	            ");" +
-	            "CREATE TABLE GENERAL_QUESTIONS (" +
+	            "CREATE TABLE IF NOT EXISTS GENERAL_QUESTIONS (" +
 	            "QUESTION_ID INT, " +
 	            "STUDENT_ID INT, " +
 	            "PRIMARY KEY (QUESTION_ID, STUDENT_ID), " +
@@ -46,7 +46,7 @@ public class DatabaseInterfaceTest {
 	            "question TEXT, " +
 	            "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
 	            ");" +
-	            "CREATE TABLE SPECIFIC_QUESTIONS (" +
+	            "CREATE TABLE IF NOT EXISTS SPECIFIC_QUESTIONS (" +
 	            "QUESTION_ID INT, " +
 	            "STUDENT_ID INT, " +
 	            "PRIMARY KEY (QUESTION_ID, STUDENT_ID), " +
