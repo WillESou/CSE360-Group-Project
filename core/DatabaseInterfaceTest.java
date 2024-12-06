@@ -125,6 +125,29 @@ public class DatabaseInterfaceTest {
         }
     }
 
+    
+    private void insertTestArticle() throws SQLException {
+    	Article testArticle = new Article(
+    			"Test Title".toCharArray(),
+    	        "Test Author".toCharArray(),
+    	        "Test Abstract".toCharArray(),
+    	        "Test Keywords".toCharArray(),
+    	        "Sensitive Content".toCharArray(),
+    	        "Test References".toCharArray(),
+    	        "General".toCharArray()
+    			);
+    	
+    	try {
+			dbInterface.addArticle(testArticle);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
+    }
+    
+    
+    
     private void insertTestUser() throws SQLException {
         if (userMan.getUserByUsername("testuser") == null) {
             userMan.createUser("testuser", "test@asu.edu", "test", "test");

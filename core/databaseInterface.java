@@ -513,13 +513,18 @@ public class databaseInterface {
      */
     public List<Article> getAllArticles() throws Exception {
         List<Article> articles = new ArrayList<>();
-        String sql = "SELECT id, title, authors FROM help_articles";
+        String sql = "SELECT id, title, authors, abstract, keywords, body, references FROM help_articles";
         try (Statement stmt = getConnection().createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 Article nArticle = new Article(
                     decryptField(rs.getString("title")).toCharArray(),
-                    decryptField(rs.getString("authors")).toCharArray()
+                    decryptField(rs.getString("authors")).toCharArray(),
+                    rs.getString("abstract").toCharArray(),
+                    rs.getString("keywords").toCharArray(),
+                    rs.getString("body").toCharArray(),
+                    rs.getString("references").toCharArray(),
+                    null
                 );
                 nArticle.setId(rs.getInt("id"));
                 articles.add(nArticle);
