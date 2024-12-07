@@ -21,7 +21,7 @@ public class HelpSystemTests {
     public void setup() throws Exception {
         // Initialize managers
         db = new databaseInterface();
-        userManager = new UserManager();
+        userManager = new UserManager(db);
         backupManager = new BackupManager(db);
 
         // Clean up any existing test data
