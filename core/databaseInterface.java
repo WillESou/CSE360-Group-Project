@@ -33,7 +33,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import java.util.*;
-import java.nio.*;
+import java.io.*;
 
 public class databaseInterface {
 	
@@ -44,6 +44,102 @@ public class databaseInterface {
 	private static String jdbcURL = "jdbc:h2:./programDatabase";
 	private static String username = "sa";
 	private static String password = "pass";
+	
+	// Add constructor that allows for test configuration
+    public databaseInterface(String jdbcURL, String username, String password) {
+        databaseInterface.jdbcURL = jdbcURL;
+        databaseInterface.username = username;
+        databaseInterface.password = password;
+        connection = null;
+        try {
+			this.encryptHelper = new EncryptionHelper();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+    
+    // Default constructor for production use
+    public databaseInterface() {
+    	
+    	this("jdbc:h2:./Database/programDatabase", "sa", "pass");
+    	
+    	if (new File("Database/programDatabase.mv.db").exists()) {
+    		System.out.println("H2 Database File Exists");
+    		return;
+    	}
+        
+        try(Connection connection = DriverManager.getConnection(jdbcURL, username, password)) {
+			System.out.println("Connection to H2 database successful");
+			
+			//Creating all user tables
+			createUsersTable(connection);
+			createRolesTable(connection);
+			populateRolesTable(connection);
+			createUserRolesTable(connection);
+			createSkillsTable(connection);
+			createUserSkillsTable(connection);
+			createArticleTables(connection);
+
+			createGroupTable(connection);
+			createGenArticlesTable(connection);
+
+
+			createInviteCodesTable(connection);
+
+            
+			//Creating questions tables
+			createGeneralQuestionsTable(connection);
+			createSpecificQuestionsTable(connection);
+            
+			//Creating session tables
+			createSessionTable(connection);
+			createSessionStudentsTable(connection);
+            
+            
+			} catch (SQLException e) {
+				e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+    }
+	
+    // Function to implement database functions into a new file.
+	public void newConnection(String filename) throws SQLException {
+		
+		String URL = "jdbc:h2:./Database/" + filename;
+		connection = DriverManager.getConnection(URL, username, password);
+		
+		if (new File("Database/" + filename +".mv.db").exists()) {
+    		System.out.println("H2 Database File Exists");
+    		return;
+    	}
+		
+		//Creating all user tables
+		createUsersTable(connection);
+		createRolesTable(connection);
+		populateRolesTable(connection);
+		createUserRolesTable(connection);
+		createSkillsTable(connection);
+		createUserSkillsTable(connection);
+		createArticleTables(connection);
+
+		createGroupTable(connection);
+		createGenArticlesTable(connection);
+
+
+		createInviteCodesTable(connection);
+
+        
+		//Creating questions tables
+		createGeneralQuestionsTable(connection);
+		createSpecificQuestionsTable(connection);
+        
+		//Creating session tables
+		createSessionTable(connection);
+		createSessionStudentsTable(connection);
+	}
+	
 	public static Connection getConnection() throws SQLException {
 	        if (connection == null || connection.isClosed()) {
 	            connection = DriverManager.getConnection(jdbcURL, username, password);
@@ -60,7 +156,8 @@ public class databaseInterface {
             }
         }
     }
-	
+	//OLD
+	/*
 	public databaseInterface() {
 		try(Connection connection = DriverManager.getConnection(jdbcURL, username, password)) {
 			System.out.println("Connection to H2 database successful");
@@ -71,29 +168,34 @@ public class databaseInterface {
 			createRolesTable(connection);
 			populateRolesTable(connection);
 			createUserRolesTable(connection);
-            createSkillsTable(connection);
-            createUserSkillsTable(connection);
+			createSkillsTable(connection);
+			createUserSkillsTable(connection);
+			createArticleTables(connection);
 
-            createArticleTables(connection);
-            createGroupTable(connection);
-            createGenArticlesTable(connection);
+			createGroupTable(connection);
+			createGenArticlesTable(connection);
 
-            createInviteCodesTable(connection);
+
+			createInviteCodesTable(connection);
 
             
-            //Creating session tables
-            createSessionTable(connection);
-            createSessionStudentsTable(connection);
+			//Creating questions tables
+			createGeneralQuestionsTable(connection);
+			createSpecificQuestionsTable(connection);
+            
+			//Creating session tables
+			createSessionTable(connection);
+			createSessionStudentsTable(connection);
             
             
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 	}
 	
-	
+	*/
 	
 	//CREATING USER TABLE
 
@@ -207,6 +309,167 @@ public class databaseInterface {
     }
     
     
+    private void createGeneralQuestionsTable(Connection conn) throws SQLException {
+    	String sql = "CREATE TABLE IF NOT EXISTS GENERAL_QUESTIONS (" +
+    				 "QUESTION_ID INT, " +
+    				 "STUDENT_ID INT, " +
+    				 "PRIMARY KEY (QUESTION_ID, STUDENT_ID), " +
+    				 "FOREIGN KEY (STUDENT_ID) REFERENCES USERS(ID), " +
+    				 "question TEXT, " +
+    				 "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+    				 ")";
+    	
+    	executeUpdate(conn, sql, "GENERAL_QUESTIONS table");
+    }
+    
+    private void createSpecificQuestionsTable(Connection conn) throws SQLException {
+    	String sql = "CREATE TABLE IF NOT EXISTS SPECIFIC_QUESTIONS (" +
+    				 "QUESTION_ID INT, " +
+    				 "STUDENT_ID INT, " +
+    				 "PRIMARY KEY (QUESTION_ID, STUDENT_ID), " +
+    				 "FOREIGN KEY (STUDENT_ID) REFERENCES USERS(ID), " +
+    				 "question TEXT, " +
+    				 "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+    				 ")";
+    	
+    	executeUpdate(conn, sql, "SPECIFIC_QUESTIONS table");
+    }
+    
+    
+    
+    public void addGeneralQuestion(String username, String qBody) throws Exception {
+        // First get the user's ID since the table uses USER_ID as a foreign key
+        String userIdQuery = "SELECT ID FROM USERS WHERE USERNAME = ?";
+        int userId;
+        
+        if(qBody.isEmpty() || (qBody == null)) {
+        	throw new Exception("addGeneralQuestion was called with blank question body!");
+        }
+        
+        
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(userIdQuery)) {
+            pstmt.setString(1, username);
+            ResultSet rs = pstmt.executeQuery();
+            if (!rs.next()) {
+                throw new SQLException("User not found: " + username);
+            }
+            userId = rs.getInt("ID");
+        }
+        
+        // Get the next question ID
+        String maxIdQuery = "SELECT MAX(QUESTION_ID) FROM GENERAL_QUESTIONS";
+        int nextQuestionId = 1; // Default start if no questions exist
+        
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement()) {
+            ResultSet rs = stmt.executeQuery(maxIdQuery);
+            if (rs.next() && rs.getObject(1) != null) {
+                nextQuestionId = rs.getInt(1) + 1;
+            }
+        }
+        
+        // Insert the new question
+        String insertQuery = "INSERT INTO GENERAL_QUESTIONS (QUESTION_ID, STUDENT_ID, question) VALUES (?, ?, ?)";
+        
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(insertQuery)) {
+            pstmt.setInt(1, nextQuestionId);
+            pstmt.setInt(2, userId);
+            pstmt.setString(3, encryptField(qBody));
+            
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows == 0) {
+                throw new SQLException("Creating general question failed, no rows affected.");
+            }
+            System.out.println("General question added successfully with ID: " + nextQuestionId);
+        }
+    }
+    
+    public void addSpecificQuestion(String username, String qBody) throws Exception {
+        // First get the user's ID since the table uses USER_ID as a foreign key
+        String userIdQuery = "SELECT ID FROM USERS WHERE USERNAME = ?";
+        int userId;
+        
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(userIdQuery)) {
+            pstmt.setString(1, username);
+            ResultSet rs = pstmt.executeQuery();
+            if (!rs.next()) {
+                throw new SQLException("User not found: " + username);
+            }
+            userId = rs.getInt("ID");
+        }
+        
+        // Get the next question ID
+        String maxIdQuery = "SELECT MAX(QUESTION_ID) FROM SPECIFIC_QUESTIONS";
+        int nextQuestionId = 1; // Default start if no questions exist
+        
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement()) {
+            ResultSet rs = stmt.executeQuery(maxIdQuery);
+            if (rs.next() && rs.getObject(1) != null) {
+                nextQuestionId = rs.getInt(1) + 1;
+            }
+        }
+        
+        // Insert the new question
+        String insertQuery = "INSERT INTO SPECIFIC_QUESTIONS (QUESTION_ID, STUDENT_ID, question) VALUES (?, ?, ?)";
+        
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(insertQuery)) {
+            pstmt.setInt(1, nextQuestionId);
+            pstmt.setInt(2, userId);
+            pstmt.setString(3, encryptField(qBody));
+            
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows == 0) {
+                throw new SQLException("Creating specific question failed, no rows affected.");
+            }
+            System.out.println("Specific question added successfully with ID: " + nextQuestionId);
+        }
+    }
+    
+    public List<String> getGeneralQuestions() throws Exception {
+        List<String> questions = new ArrayList<>();
+        String sql = "SELECT U.USERNAME, Q.question " +
+                     "FROM GENERAL_QUESTIONS Q " +
+                     "JOIN USERS U ON Q.STUDENT_ID = U.ID " +
+                     "ORDER BY Q.created_at DESC";
+                     
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            
+            while (rs.next()) {
+                String username = rs.getString("USERNAME");
+                String questionText = decryptField(rs.getString("question"));
+                questions.add(username + "\n" + questionText);
+            }
+        }
+        return questions;
+    }
+
+    public List<String> getSpecificQuestions() throws Exception {
+        List<String> questions = new ArrayList<>();
+        String sql = "SELECT U.USERNAME, Q.question " +
+                     "FROM SPECIFIC_QUESTIONS Q " +
+                     "JOIN USERS U ON Q.STUDENT_ID = U.ID " +
+                     "ORDER BY Q.created_at DESC";
+                     
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            
+            while (rs.next()) {
+                String username = rs.getString("USERNAME");
+                String questionText = decryptField(rs.getString("question"));
+                questions.add(username + "\n" + questionText);
+            }
+        }
+        return questions;
+    }
+    
     //EXECUTES A STATEMENT, PROVIDES UNIQUE ERROR IF IT FAILS
     private void executeUpdate(Connection conn, String sql, String tableName) throws SQLException {
         try (Statement stmt = conn.createStatement()) {
@@ -259,9 +522,16 @@ public class databaseInterface {
      */
     public int addArticle(Article article) throws Exception {
         String sql = "INSERT INTO help_articles (id, title, authors, abstract, keywords, body, references) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        int id = -1;
+        
         try (PreparedStatement pstmt = getConnection().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
         	
-        	int id = getID(article.getTitle());
+        	id = getID(article.getTitle());
+        	
+        	if (getArticle(id) != null) {
+        		return id;
+        	}
+        		
             pstmt.setInt(1, id);
             pstmt.setString(2, encryptField(new String(article.getTitle())));
             pstmt.setString(3, encryptField(new String(article.getAuthors())));
@@ -293,11 +563,7 @@ public class databaseInterface {
         try (Statement stmt = getConnection().createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
-                Article nArticle = new Article(
-                    decryptField(rs.getString("title")).toCharArray(),
-                    decryptField(rs.getString("authors")).toCharArray()
-                );
-                nArticle.setId(rs.getInt("id"));
+                Article nArticle = getArticle(rs.getInt("id"));
                 articles.add(nArticle);
             }
         }
@@ -407,6 +673,51 @@ public class databaseInterface {
     		
     		pstmt.executeUpdate();
     	}
+    }
+    
+    public List<String> getGroups() throws Exception {
+    	
+    	List<String> ret = new ArrayList<String>();
+    	String sql = "SELECT GROUP_NAME FROM group_access";
+    	
+    	try (Statement stmt = getConnection().createStatement();
+                ResultSet rs = stmt.executeQuery(sql)) {
+               while (rs.next()) {
+            	   if (!ret.contains(decryptField(rs.getString("GROUP_NAME")))) {
+            		   ret.add(decryptField(rs.getString("GROUP_NAME")));
+            	   }
+               }
+    	}
+    	return ret;
+    }
+    
+    // A duplicate of the above function, but with the ability to specify a user.
+    // Used for JUnit testing.
+    public int createTestGroup(String groupName, boolean isSpecial, User user) throws SQLException, Exception {
+    	User writer = user;
+    	int test = -1;
+    	
+    	String sql = "INSERT INTO group_access (GROUP_NAME, USER_NAME, ACCESS) VALUES (?, ?, ?)";
+    	try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
+    		pstmt.setString(1, encryptField(groupName));
+    		
+    		if (!isSpecial) { // General Group
+    			pstmt.setString(2, ("ALL"));
+    			pstmt.setInt(3, 3);
+    			test = 3;
+    		} else if (writer.hasRole(ROLE.INSTRUCTOR)) { // The creator is an instructor, and is therefore the first instructor added.
+    			pstmt.setString(2, (writer.getUsername()));
+    			pstmt.setInt(3, 2);
+    			test = 2;
+    		} else { // The creator is not an instructor, and cannot see the articles.
+    			pstmt.setString(2, (writer.getUsername()));
+    			pstmt.setInt(3, 1);
+    			test = 1;
+    		}
+    		
+    		pstmt.executeUpdate();
+    	}
+    	return test;
     }
     
     /**
@@ -783,6 +1094,15 @@ public class databaseInterface {
         }
     }
    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     /**
      * Encrypts a field value for secure storage in the database.
      * 

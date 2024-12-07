@@ -1,0 +1,3 @@
+2024-12-06 16:17:06.907118-07:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "GROUP_ACCESS" not found (this database is empty); SQL statement:
+INSERT INTO group_access (GROUP_NAME, USER_NAME, ACCESS) VALUES (?, ?, ?) [42104-232]

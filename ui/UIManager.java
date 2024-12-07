@@ -96,12 +96,6 @@ public class UIManager {
 	public void loadArticlePage() {
 		
 		HelpArticleSystem articleSystem = new HelpArticleSystem();
-		try {
-			articleSystem.show();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 	
 	

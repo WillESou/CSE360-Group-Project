@@ -308,7 +308,7 @@ public class UserManager {
     }
     
     public UserManager() {
-    	this.dbInterface = new databaseInterface();
+    	this.dbInterface = Source.getDatabase();
     }
     
     public databaseInterface getDatabaseInterface() {
