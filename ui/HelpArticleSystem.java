@@ -54,6 +54,44 @@ public class HelpArticleSystem{
     private boolean isSpecial = false;
     private User currentUser;
     
+    private boolean altFile;
+    
+    public HelpArticleSystem() {
+    	
+    	// Initialize database and backup managers
+    	altFile = false;
+    	
+    	try {
+			dbMan = Source.getDatabase();
+			backupMan = new BackupManager(dbMan);
+			userMan = new UserManager();
+			currentUser = Source.getUIManager().getUser();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+    	
+    	try {
+			show();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+    
+    public HelpArticleSystem(databaseInterface database) {
+    	
+    	// Initialize database and backup managers
+    	altFile = false;
+    	
+    	try {
+			dbMan = database;
+			backupMan = new BackupManager(dbMan);
+			userMan = new UserManager(database);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+    }
+    
     /**
      * The main entry point for the JavaFX application.
      * 
@@ -62,16 +100,6 @@ public class HelpArticleSystem{
      * @throws SQLException 
      */
     public void show() throws SQLException, Exception {
-        // Initialize database and backup managers
-    	try {
-			dbMan = new databaseInterface();
-			backupMan = new BackupManager(dbMan);
-			userMan = new UserManager();
-			currentUser = Source.getUIManager().getUser();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-    
         
         mainLayout = new VBox(10);
         mainLayout.setPadding(new Insets(20));
@@ -90,6 +118,7 @@ public class HelpArticleSystem{
         Button refreshButton = createStylizedButton("REFRESH ARTICLE LIST");
         Button backupButton = createStylizedButton("BACKUP ARTICLES");
         Button restoreButton = createStylizedButton("RESTORE ARTICLES");
+        Button openButton = createStylizedButton("OPEN FILE");
         Button searchButton = createStylizedButton("SEARCH");
         Button deleteAllArticlesButton = createStylizedButton("ERASE ALL ARTICLES");
         Button quitButton = createStylizedButton("EXIT");
@@ -101,6 +130,7 @@ public class HelpArticleSystem{
         refreshButton.setOnAction(e -> refreshArticleList());
         backupButton.setOnAction(e -> backupArticles());
         restoreButton.setOnAction(e -> restoreArticles());
+        openButton.setOnAction(e -> openFile());
         searchButton.setOnAction(e -> search());
         deleteAllArticlesButton.setOnAction(e -> deleteAllArticles());
         quitButton.setOnAction(e-> handleQuit());
@@ -109,20 +139,19 @@ public class HelpArticleSystem{
         buttonBox = new HBox(10);
         
         int access = dbMan.groupAccess(currentUser.getUsername(), currentGroup);
-        System.out.println(access);
+//        System.out.println(access);
         
         if (access == 2
         		|| ((!currentUser.hasRole(ROLE.STUDENT)) && access == 3)
-        		|| (!currentUser.hasRole(ROLE.STUDENT)) && access == -1) {
+        		|| (currentUser.hasRole(ROLE.INSTRUCTOR)) && access == -1) {
         	buttonBox.getChildren().add(addButton);
         }
         
         if(currentUser.hasRole(ROLE.ADMIN)) {
-        	buttonBox.getChildren().addAll(deleteButton, deleteAllArticlesButton, refreshButton, backupButton, restoreButton, searchButton, quitButton);
+        	buttonBox.getChildren().addAll(deleteButton, deleteAllArticlesButton, refreshButton, backupButton, restoreButton, openButton, searchButton, quitButton);
         }
         else if(currentUser.hasRole(ROLE.INSTRUCTOR)) {
-            buttonBox.getChildren().addAll(displayButton, deleteButton, deleteAllArticlesButton, refreshButton, backupButton, restoreButton, searchButton, quitButton);
-
+            buttonBox.getChildren().addAll(displayButton, deleteButton, deleteAllArticlesButton, refreshButton, backupButton, restoreButton, openButton, searchButton, quitButton);
         }
         else if(currentUser.hasRole(ROLE.STUDENT))
         {
@@ -423,20 +452,38 @@ public class HelpArticleSystem{
 			}
 		});
         
+
+        Button resetFile = createStylizedButton("Restore Original File");
+        resetFile.setOnAction(e -> {
+        	try {
+				dbMan.newConnection("programDatabase");
+			} catch (SQLException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+        	altFile = false;
+        	try {
+				show();
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+        });
+
         if(currentUser.hasRole(ROLE.ADMIN)) {
             searchBox.getChildren().setAll(new Label("SEARCH BY KEYWORD:"), searchField, searchButton, chooseGroup, createGroup);
 
         }
         else if(currentUser.hasRole(ROLE.INSTRUCTOR)) {
 
-            searchBox.getChildren().setAll(new Label("SEARCH BY KEYWORD:"), searchField, searchButton, chooseGroup);
+
+            searchBox.getChildren().setAll(new Label("SEARCH BY KEYWORD:"), searchField, searchButton, chooseGroup, createGroup);
 
         }
         else if(currentUser.hasRole(ROLE.STUDENT))
         {
             searchBox.getChildren().setAll(new Label("SEARCH BY KEYWORD:"), searchField, searchButton, chooseGroup);
 
-        	
         }
         
         
@@ -447,6 +494,10 @@ public class HelpArticleSystem{
         
         if (access == 1 || access == 2) {
         	searchBox.getChildren().addAll(addToGroup, manageGroup);
+        }
+        
+        if (altFile) {
+        	searchBox.getChildren().add(resetFile);
         }
     }
     
@@ -565,45 +616,212 @@ public class HelpArticleSystem{
         }
     }
 
+    
+//    private void backupArticles() {
+//    	System.out.println("INITIATING BACKUP");
+//        FileChooser fileChooser = new FileChooser();
+//        fileChooser.setTitle("Save Backup File");
+//        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Backup Files", "*.bak"));
+//        File file = fileChooser.showSaveDialog(null);
+//        
+//        if (file != null) {
+//            try {
+//            	System.out.println("CALLING BACKUP MANAGER");
+//                backupMan.backupArticles(file.getAbsolutePath());
+//                showAlert("Backup Successful", "Articles have been backed up successfully.");
+//            } catch (Exception e) {
+//                showAlert("Backup Failed", "Failed to backup articles: " + e.getMessage());
+//            }
+//        }
+//    }
+    
     /**
-     * Initiates the backup process for all articles.
+     * Initiates the backup process for articles or groups of articles.
      */
     private void backupArticles() {
-    	System.out.println("INITIATING BACKUP");
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Save Backup File");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Backup Files", "*.bak"));
-        File file = fileChooser.showSaveDialog(null);
-        
-        if (file != null) {
-            try {
-            	System.out.println("CALLING BACKUP MANAGER");
-                backupMan.backupArticles(file.getAbsolutePath());
-                showAlert("Backup Successful", "Articles have been backed up successfully.");
-            } catch (Exception e) {
-                showAlert("Backup Failed", "Failed to backup articles: " + e.getMessage());
-            }
-        }
-    }
+    	
+    	Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Article Backup");
+        dialog.setHeaderText("Back Up Articles");
 
+        // Create the content for the dialog
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(10));
+        content.setAlignment(Pos.CENTER);
+
+        // Create role selection combo box
+        TextField fileField = new TextField();
+        CheckBox overWrite = new CheckBox("Overwrite File Content?");
+        CheckBox groupC = new CheckBox("Only Backup Current Group?");
+        Label newFile = new Label("Write to New File");
+        Label doNot = new Label("Cannot Write to Main File");
+        
+        content.getChildren().addAll(
+            new Label("File Name:"),
+            fileField,
+            groupC,
+            newFile
+        );
+
+        // Set the content and add buttons
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        // Text Field Listener checks for properties of the filename as it is typed.
+        fileField.textProperty().addListener((observable, oldValue, newValue)
+				-> {
+					String filename = fileField.getText();
+					File f = new File("Database/" + filename + ".mv.db");
+					
+					// The filename already exists. The option to overwrite or add
+					// to the file will appear.
+			    	if (f.exists() && !content.getChildren().contains(overWrite)
+			    			&& !(filename.equals("programDatabase"))) {
+			    		
+			    		overWrite.setSelected(false);
+			    		
+			    		if (!content.getChildren().contains(overWrite)) {
+			    			content.getChildren().add(overWrite);
+			    		}
+			    		content.getChildren().remove(newFile);
+			    		content.getChildren().remove(doNot);
+			    		
+			    	// The filename is the default filename. Users will be unable to 
+			    	// write to this file.
+			    	} else if (filename.equals("programDatabase")) {
+			    		
+			    		overWrite.setSelected(false);
+			    		
+			    		if (!content.getChildren().contains(doNot)) {
+			    			content.getChildren().add(doNot);
+			    		}
+			    		content.getChildren().remove(newFile);
+			    		content.getChildren().remove(overWrite);
+			    		
+			    	// The filename does not yet exist.
+			    	} else {
+			    	
+			    		overWrite.setSelected(false);
+			    		
+			    		if (!content.getChildren().contains(newFile)) {
+			    			content.getChildren().add(newFile);
+			    		}
+			    		content.getChildren().remove(doNot);
+			    		content.getChildren().remove(overWrite);
+			    	}
+				});
+    	
+        // Show the dialog and handle the result
+        dialog.showAndWait().ifPresent(buttonType -> {
+            if (buttonType == ButtonType.OK) {
+                try {
+                	
+                	// The filename cannot be empty or be the default database name.
+                	String file = fileField.getText();
+                	if (!file.equals("") && !file.equals("programDatabase")) {
+                		
+                		altFile = true;
+                		backupMan.backupArticles(fileField.getText(), overWrite.isSelected(),
+                				groupC.isSelected(), currentGroup);
+                		show();
+                	}
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+            }
+        });
+    }
+    
+    private void openFile() {
+    	
+    	Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Article File");
+        dialog.setHeaderText("Open File");
+
+        // Create the content for the dialog
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(10));
+        content.setAlignment(Pos.CENTER);
+
+        // Create role selection combo box
+        TextField fileField = new TextField();
+        
+        content.getChildren().addAll(
+            new Label("File Name:"),
+            fileField
+        );
+
+        // Set the content and add buttons
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        
+        // Show the dialog and handle the result
+        dialog.showAndWait().ifPresent(buttonType -> {
+            if (buttonType == ButtonType.OK) {
+                try {
+                	
+                	// The filename cannot be empty or be the default database name.
+                	String file = fileField.getText();
+                	if (!file.equals("") && !file.equals("programDatabase")) {
+                		
+                		altFile = true;
+                		dbMan.newConnection(file);
+                		show();
+                	}
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+            }
+        });
+    }
+    
     /**
      * Initiates the restore process for articles from a backup file.
      */
     private void restoreArticles() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Open Backup File");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Backup Files", "*.bak"));
-        File file = fileChooser.showOpenDialog(null);
+
+    	Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Article Restoration");
+        dialog.setHeaderText("Restore From File");
+
+        // Create the content for the dialog
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(10));
+        content.setAlignment(Pos.CENTER);
+
+        // Create role selection combo box
+        TextField fileField = new TextField();
         
-        if (file != null) {
-            try {
-                backupMan.restoreArticles(file.getAbsolutePath());
-                refreshArticleList();
-                showAlert("Restore Successful", "Articles have been restored successfully.");
-            } catch (Exception e) {
-                showAlert("Restore Failed", "Failed to restore articles: " + e.getMessage());
+        content.getChildren().addAll(
+            new Label("File Name:"),
+            fileField
+        );
+
+        // Set the content and add buttons
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        
+        // Show the dialog and handle the result
+        dialog.showAndWait().ifPresent(buttonType -> {
+            if (buttonType == ButtonType.OK) {
+                try {
+                	
+                	// The filename cannot be empty or be the default database name.
+                	String file = fileField.getText();
+                	if (!file.equals("") && !file.equals("programDatabase")) {
+                		
+                		altFile = false;
+                		backupMan.restoreArticles(file);
+                		show();
+                	}
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
             }
-        }
+        });
     }
     
     private void search() {
@@ -622,6 +840,37 @@ public class HelpArticleSystem{
         alert.setHeaderText(null);
         alert.setContentText(content);
         alert.showAndWait();
+    }
+    
+    public int testAccess(String group, User user, databaseInterface dbMan) throws SQLException, Exception {
+    	
+    	currentUser = user;
+    	currentGroup = group;
+    	
+    	int test = -2;
+    	
+    	// Any admin 
+    	if (currentUser.hasRole(ROLE.ADMIN)) {
+    		test = 1;
+    	// Any instructor has the ability to the 'Create Group' button. This means 
+    	// that a 3 symbolizes the ability to create a new special group.
+    	} else if (currentUser.hasRole(ROLE.INSTRUCTOR)) {
+    		test = 3;
+    	}
+    	
+    	/**
+    	 * If the user has access to a special group, the groupAccess() function will return
+    	 * a value based on their access level:
+    	 * 
+    	 * -1 - No Rights (We will return the regular values above in this case)
+    	 * 0 - Standard Viewing Rights (Student, Basic Instructor)
+    	 * 1 - Admin rights without viewing rights (Admin)
+    	 * 2 - Instructor with Admin Rights (Instructor)
+    	 * 3 - The group is general. Normal roles apply.
+    	 */
+    	test = dbMan.groupAccess(currentUser.getUsername(), group);
+    	
+    	return test;
     }
 
 }

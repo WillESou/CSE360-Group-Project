@@ -11,12 +11,16 @@ import ui.UIManager;
 
 public class Source extends Application {
 	
-	databaseInterface database = new databaseInterface();
+	public static databaseInterface database = new databaseInterface();
 	private static Stage primaryStage = new Stage();
 	private static UIManager uiMan = new UIManager();
 	
 	public void start(Stage primaryStage) {
 		uiMan.loadLoginPage();
+	}
+	
+	public static databaseInterface getDatabase() {
+		return database;
 	}
     
 	 public static Stage getPrimaryStage() {

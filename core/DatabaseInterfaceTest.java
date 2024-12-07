@@ -25,6 +25,7 @@ public class DatabaseInterfaceTest {
         
         cleanupDatabase();
         
+
         // Create an instance of UserManager
         userMan = new UserManager();
         
@@ -39,20 +40,23 @@ public class DatabaseInterfaceTest {
         insertTestUser();
     }
 
+
+
     
     
     
     
     @After
-    public void tearDown() throws Exception {
-       
-    	cleanupDatabase();
-        
+    public void tearDown() throws Exception { 
+      
+      
+        cleanupDatabase();
         // Close the connection
         if (connection != null && !connection.isClosed()) {
             connection.close();
         }
     }
+
 
     private void cleanupDatabase() throws SQLException {
         try (Statement stmt = connection.createStatement()) {
@@ -61,7 +65,7 @@ public class DatabaseInterfaceTest {
         }
     }
 
-    
+   
     private void createTables() throws SQLException {
         try (Statement stmt = connection.createStatement()) {
             // Create ROLES table first since it's referenced by USER_ROLES
@@ -125,6 +129,7 @@ public class DatabaseInterfaceTest {
         }
     }
 
+
     
     private void insertTestArticle() throws SQLException {
     	Article testArticle = new Article(
@@ -145,8 +150,6 @@ public class DatabaseInterfaceTest {
 		}
     	
     }
-    
-    
     
     private void insertTestUser() throws SQLException {
         if (userMan.getUserByUsername("testuser") == null) {
