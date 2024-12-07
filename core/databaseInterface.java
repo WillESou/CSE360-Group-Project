@@ -62,16 +62,14 @@ public class databaseInterface {
     // Default constructor for production use
     public databaseInterface() {
 
-    	
- 
+    	this("jdbc:h2:./Database/programDatabase", "sa", "pass");
     	
     	if (new File("Database/programDatabase.mv.db").exists()) {
     		System.out.println("H2 Database File Exists");
     		return;
     	}
-      this("jdbc:h2:./Database/programDatabase", "sa", "pass");
-      
-      try(Connection connection = DriverManager.getConnection(jdbcURL, username, password)) {
+    	
+    	try(Connection connection = DriverManager.getConnection(jdbcURL, username, password)) {
 			System.out.println("Connection to H2 database successful");
 			
 			//Creating all user tables
@@ -114,6 +112,7 @@ public class databaseInterface {
 		
 		if (new File("Database/" + filename +".mv.db").exists()) {
     		System.out.println("H2 Database File " + filename + " Exists");
+    		connection = DriverManager.getConnection(URL, username, password);
     		return;
     	}
 		
