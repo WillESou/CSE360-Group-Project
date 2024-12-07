@@ -1013,6 +1013,282 @@ public class databaseInterface {
     }
    
     
+    /**
+     * Checks if a group exists
+     * @param groupName Name of group to check
+     * @return true if group exists, false otherwise
+     * @throws SQLException if database operation fails
+     */
+    public boolean groupExists(String groupName) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM GROUPS WHERE GROUP_NAME = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, groupName);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        }
+    }
+
+    /**
+     * Checks if a group is marked as special access
+     * @param groupName Name of group to check
+     * @return true if group is special, false otherwise
+     * @throws SQLException if database operation fails
+     */
+    public boolean isSpecialGroup(String groupName) throws SQLException {
+        String sql = "SELECT IS_SPECIAL FROM GROUPS WHERE GROUP_NAME = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, groupName);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next() && rs.getBoolean("IS_SPECIAL");
+            }
+        }
+    }
+
+    /**
+     * Grants a user access to a group
+     * @param username Username to grant access
+     * @param groupName Group to grant access to
+     * @throws SQLException if database operation fails
+     */
+    public void grantGroupAccess(String username, String groupName) throws SQLException {
+        String sql = "INSERT INTO GROUP_MEMBERS (GROUP_ID, USER_ID) " +
+                    "SELECT g.ID, u.ID FROM GROUPS g, USERS u " +
+                    "WHERE g.GROUP_NAME = ? AND u.USERNAME = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, groupName);
+            pstmt.setString(2, username);
+            pstmt.executeUpdate();
+        }
+    }
+
+    /**
+     * Checks if a user can access a specific group
+     * @param username Username to check
+     * @param groupName Group to check access for
+     * @return true if user has access, false otherwise
+     * @throws SQLException if database operation fails
+     */
+    public boolean canAccessGroup(String username, String groupName) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM GROUP_MEMBERS gm " +
+                    "JOIN GROUPS g ON gm.GROUP_ID = g.ID " +
+                    "JOIN USERS u ON gm.USER_ID = u.ID " +
+                    "WHERE u.USERNAME = ? AND g.GROUP_NAME = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            pstmt.setString(2, groupName);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        }
+    }
+
+    /**
+     * Sets the skill level for an article
+     * @param articleId ID of the article
+     * @param skillLevel Skill level to set
+     * @throws SQLException if database operation fails
+     */
+    public void setArticleSkillLevel(int articleId, String skillLevel) throws SQLException {
+        String sql = "UPDATE ARTICLES SET SKILL_LEVEL = ? WHERE ID = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, skillLevel);
+            pstmt.setInt(2, articleId);
+            pstmt.executeUpdate();
+        }
+    }
+
+    /**
+     * Sets a user's skill level for a specific subject
+     * @param username Username to set skill for
+     * @param subject Subject area
+     * @param skillLevel Skill level to set
+     * @throws SQLException if database operation fails
+     */
+    public void setUserSkillLevel(String username, String subject, String skillLevel) throws SQLException {
+        String sql = "INSERT INTO SKILL_LEVELS (USER_ID, SUBJECT, LEVEL) " +
+                    "SELECT ID, ?, ? FROM USERS WHERE USERNAME = ? " +
+                    "ON CONFLICT (USER_ID, SUBJECT) DO UPDATE SET LEVEL = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, subject);
+            pstmt.setString(2, skillLevel);
+            pstmt.setString(3, username);
+            pstmt.setString(4, skillLevel);
+            pstmt.executeUpdate();
+        }
+    }
+
+    /**
+     * Gets a user's skill level for a specific subject
+     * @param username Username to check
+     * @param subject Subject area to check
+     * @return Skill level string or null if not set
+     * @throws SQLException if database operation fails
+     */
+    public String getUserSkillLevel(String username, String subject) throws SQLException {
+        String sql = "SELECT sl.LEVEL FROM SKILL_LEVELS sl " +
+                    "JOIN USERS u ON sl.USER_ID = u.ID " +
+                    "WHERE u.USERNAME = ? AND sl.SUBJECT = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            pstmt.setString(2, subject);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next() ? rs.getString("LEVEL") : null;
+            }
+        }
+    }
+
+    /**
+     * Gets the total count of admin users
+     * @return Number of users with admin role
+     * @throws SQLException if database operation fails
+     */
+    public int getAdminCount() throws SQLException {
+        String sql = "SELECT COUNT(DISTINCT USER_ID) FROM USER_ROLES ur " +
+                    "JOIN ROLES r ON ur.ROLE_ID = r.ID " +
+                    "WHERE r.ROLE_NAME = 'ADMIN'";
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            return rs.next() ? rs.getInt(1) : 0;
+        }
+    }
+
+    /**
+     * Checks if a user is the last remaining admin
+     * @param username Username to check
+     * @return true if user is last admin, false otherwise
+     * @throws SQLException if database operation fails
+     */
+    public boolean isLastAdmin(String username) throws SQLException {
+        return getAdminCount() == 1 && hasRole(username, "ADMIN");
+    }
+
+    /**
+     * Helper method to check if a user has a specific role
+     */
+    private boolean hasRole(String username, String roleName) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM USER_ROLES ur " +
+                    "JOIN USERS u ON ur.USER_ID = u.ID " +
+                    "JOIN ROLES r ON ur.ROLE_ID = r.ID " +
+                    "WHERE u.USERNAME = ? AND r.ROLE_NAME = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            pstmt.setString(2, roleName);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        }
+    }
+
+    /**
+     * Gets articles by skill level
+     * @param skillLevel Skill level to filter by
+     * @return List of matching articles
+     * @throws SQLException if database operation fails
+     */
+    public List<Article> getArticlesBySkillLevel(String skillLevel) throws SQLException {
+        String sql = "SELECT * FROM ARTICLES WHERE SKILL_LEVEL = ? OR SKILL_LEVEL = 'ALL'";
+        List<Article> articles = new ArrayList<>();
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, skillLevel);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    // Create Article from ResultSet
+                    articles.add(createArticleFromResultSet(rs));
+                }
+            }
+        }
+        return articles;
+    }
+
+    /**
+     * Gets articles accessible to a specific user
+     * @param username Username to check access for
+     * @return List of accessible articles
+     * @throws SQLException if database operation fails
+     */
+    public List<Article> getAccessibleArticles(String username) throws SQLException {
+        String sql = "SELECT DISTINCT a.* FROM ARTICLES a " +
+                    "LEFT JOIN GROUPS g ON a.GROUP_NAME = g.GROUP_NAME " +
+                    "LEFT JOIN GROUP_MEMBERS gm ON g.ID = gm.GROUP_ID " +
+                    "LEFT JOIN USERS u ON gm.USER_ID = u.ID " +
+                    "WHERE g.IS_SPECIAL = FALSE " +
+                    "OR u.USERNAME = ?";
+        List<Article> articles = new ArrayList<>();
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    articles.add(createArticleFromResultSet(rs));
+                }
+            }
+        }
+        return articles;
+    }
+
+    /**
+     * Helper method to create Article object from ResultSet
+     */
+    private Article createArticleFromResultSet(ResultSet rs) throws SQLException {
+        return new Article(
+            rs.getString("TITLE").toCharArray(),
+            rs.getString("AUTHORS").toCharArray(),
+            rs.getString("ABSTRACT").toCharArray(),
+            rs.getString("KEYWORDS").toCharArray(),
+            rs.getString("BODY").toCharArray(),
+            rs.getString("REFERENCES").toCharArray(),
+            rs.getString("GROUP_NAME").toCharArray()
+        );
+    }
+
+    /**
+     * Group membership management methods
+     */
+    public void addUserToGroup(String username, String groupName) throws SQLException {
+        // Same as grantGroupAccess method
+        grantGroupAccess(username, groupName);
+    }
+
+    public void removeUserFromGroup(String username, String groupName) throws SQLException {
+        String sql = "DELETE FROM GROUP_MEMBERS " +
+                    "WHERE GROUP_ID = (SELECT ID FROM GROUPS WHERE GROUP_NAME = ?) " +
+                    "AND USER_ID = (SELECT ID FROM USERS WHERE USERNAME = ?)";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, groupName);
+            pstmt.setString(2, username);
+            pstmt.executeUpdate();
+        }
+    }
+
+    public List<String> getUserGroups(String username) throws SQLException {
+        String sql = "SELECT g.GROUP_NAME FROM GROUPS g " +
+                    "JOIN GROUP_MEMBERS gm ON g.ID = gm.GROUP_ID " +
+                    "JOIN USERS u ON gm.USER_ID = u.ID " +
+                    "WHERE u.USERNAME = ?";
+        List<String> groups = new ArrayList<>();
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    groups.add(rs.getString("GROUP_NAME"));
+                }
+            }
+        }
+        return groups;
+    }
     
     
     
