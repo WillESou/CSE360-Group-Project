@@ -108,12 +108,13 @@ public class databaseInterface {
 	public void newConnection(String filename) throws SQLException {
 		
 		String URL = "jdbc:h2:./Database/" + filename;
-		connection = DriverManager.getConnection(URL, username, password);
 		
 		if (new File("Database/" + filename +".mv.db").exists()) {
-    		System.out.println("H2 Database File Exists");
+    		System.out.println("H2 Database File " + filename + " Exists");
     		return;
     	}
+		
+		connection = DriverManager.getConnection(URL, username, password);
 		
 		//Creating all user tables
 		createUsersTable(connection);
@@ -139,6 +140,8 @@ public class databaseInterface {
 		createSessionTable(connection);
 		createSessionStudentsTable(connection);
 	}
+	
+	
 	
 	public static Connection getConnection() throws SQLException {
 	        if (connection == null || connection.isClosed()) {
@@ -199,7 +202,7 @@ public class databaseInterface {
 	
 	//CREATING USER TABLE
 
-	private void createUsersTable(Connection conn) throws SQLException {
+	void createUsersTable(Connection conn) throws SQLException {
         String sql = "CREATE TABLE IF NOT EXISTS USERS (" +
                      "ID INT AUTO_INCREMENT PRIMARY KEY, " +
                      "USERNAME VARCHAR(50) NOT NULL UNIQUE, " +
@@ -213,7 +216,7 @@ public class databaseInterface {
         executeUpdate(conn, sql, "USERS table");
     }
 
-	 private void createUserRolesTable(Connection conn) throws SQLException {
+	 void createUserRolesTable(Connection conn) throws SQLException {
 	        String sql = "CREATE TABLE IF NOT EXISTS USER_ROLES (" +
 	                     "USER_ID INT, " +
 	                     "ROLE_ID INT, " +
@@ -224,7 +227,7 @@ public class databaseInterface {
 	        executeUpdate(conn, sql, "USER_ROLES table");
 	    }
 	//CREATING TABLE THAT TRACKS ROLLS
-	private void createRolesTable(Connection conn) throws SQLException {
+	void createRolesTable(Connection conn) throws SQLException {
         String sql = "CREATE TABLE IF NOT EXISTS ROLES (" +
                      "ID INT AUTO_INCREMENT PRIMARY KEY, " +
                      "ROLE_NAME VARCHAR(20) UNIQUE NOT NULL" +
@@ -232,7 +235,7 @@ public class databaseInterface {
         executeUpdate(conn, sql, "ROLES table");
     }
 
-    private void populateRolesTable(Connection conn) throws SQLException {
+    void populateRolesTable(Connection conn) throws SQLException {
         String[] roles = {"ADMIN", "STUDENT", "INSTRUCTOR"};
         String selectSql = "SELECT COUNT(*) FROM ROLES WHERE ROLE_NAME = ?";
         String insertSql = "INSERT INTO ROLES (ROLE_NAME) VALUES (?)";
@@ -256,7 +259,7 @@ public class databaseInterface {
 
 
     //CREATING TABLE THAT TRACKS SKILL TYPES
-    private void createSkillsTable(Connection conn) throws SQLException {
+    void createSkillsTable(Connection conn) throws SQLException {
         String sql = "CREATE TABLE IF NOT EXISTS SKILLS (" +
                      "ID INT AUTO_INCREMENT PRIMARY KEY, " +
                      "SKILL_NAME VARCHAR(50) UNIQUE NOT NULL" +
@@ -264,7 +267,7 @@ public class databaseInterface {
         executeUpdate(conn, sql, "SKILLS table");
     }
     //CREATING TABLE THAT TRACKS WHICH USER HAS WHAT SKILL AND THEIR SKILL LEVEL
-    private void createUserSkillsTable(Connection conn) throws SQLException {
+    void createUserSkillsTable(Connection conn) throws SQLException {
         String sql = "CREATE TABLE IF NOT EXISTS USER_SKILLS (" +
                      "USER_ID INT, " +
                      "SKILL_ID INT, " +
@@ -278,7 +281,7 @@ public class databaseInterface {
     
     
     //CREATING TABLE THAT TRACKS INVITE CODES
-    private void createInviteCodesTable(Connection conn) throws SQLException {
+    void createInviteCodesTable(Connection conn) throws SQLException {
         String sql = "CREATE TABLE IF NOT EXISTS INVITE_CODES (" +
                      "CODE VARCHAR(16) PRIMARY KEY, " +
                      "ROLE VARCHAR(20) NOT NULL, " +  // The role this invite code grants
@@ -287,7 +290,7 @@ public class databaseInterface {
         executeUpdate(conn, sql, "INVITE_CODES table");
     }
     
-    private void createSessionTable(Connection conn) throws SQLException {
+    void createSessionTable(Connection conn) throws SQLException {
         String sql = "CREATE TABLE IF NOT EXISTS SESSIONS (" +
                      "ID INT AUTO_INCREMENT PRIMARY KEY, " +
                      "NAME VARCHAR(100) NOT NULL, " +
@@ -297,7 +300,7 @@ public class databaseInterface {
         executeUpdate(conn, sql, "SESSIONS table");
     }
 
-    private void createSessionStudentsTable(Connection conn) throws SQLException {
+    void createSessionStudentsTable(Connection conn) throws SQLException {
         String sql = "CREATE TABLE IF NOT EXISTS SESSION_STUDENTS (" +
                      "SESSION_ID INT, " +
                      "STUDENT_ID INT, " +
@@ -309,7 +312,7 @@ public class databaseInterface {
     }
     
     
-    private void createGeneralQuestionsTable(Connection conn) throws SQLException {
+    void createGeneralQuestionsTable(Connection conn) throws SQLException {
     	String sql = "CREATE TABLE IF NOT EXISTS GENERAL_QUESTIONS (" +
     				 "QUESTION_ID INT, " +
     				 "STUDENT_ID INT, " +
@@ -322,7 +325,7 @@ public class databaseInterface {
     	executeUpdate(conn, sql, "GENERAL_QUESTIONS table");
     }
     
-    private void createSpecificQuestionsTable(Connection conn) throws SQLException {
+    void createSpecificQuestionsTable(Connection conn) throws SQLException {
     	String sql = "CREATE TABLE IF NOT EXISTS SPECIFIC_QUESTIONS (" +
     				 "QUESTION_ID INT, " +
     				 "STUDENT_ID INT, " +
@@ -486,7 +489,7 @@ public class databaseInterface {
      * 
      * @throws SQLException If there's an error executing the SQL statement
      */
-    private void createArticleTables(Connection conn) throws SQLException {
+    void createArticleTables(Connection conn) throws SQLException {
         String sql = "CREATE TABLE IF NOT EXISTS help_articles ("
                 + "id INT PRIMARY KEY, "
                 + "title VARCHAR(255) UNIQUE NOT NULL, "
@@ -633,7 +636,7 @@ public class databaseInterface {
      * 
      * @throws SQLException If there's an error executing the SQL statement
      */
-    private void createGroupTable(Connection conn) throws SQLException {
+    void createGroupTable(Connection conn) throws SQLException {
         String sql = "CREATE TABLE IF NOT EXISTS group_access ("
         		+ "GROUP_NAME VARCHAR(255) NOT NULL, "
                 + "USER_NAME VARCHAR(255) NOT NULL,"
@@ -859,7 +862,7 @@ public class databaseInterface {
      * 
      * @throws SQLException If there's an error executing the SQL statement
      */
-    private void createGenArticlesTable(Connection conn) throws SQLException {
+    void createGenArticlesTable(Connection conn) throws SQLException {
         String sql = "CREATE TABLE IF NOT EXISTS group_articles ("
         		+ "GROUP_NAME VARCHAR(255) NOT NULL, "
                 + "ID INT NOT NULL"

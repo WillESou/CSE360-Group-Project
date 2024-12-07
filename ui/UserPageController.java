@@ -1,8 +1,15 @@
 package ui;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.TextArea;
+import javafx.scene.layout.AnchorPane;
 
+import java.util.List;
 
 import core.*;
 
@@ -21,14 +28,29 @@ import core.*;
 
 public class UserPageController {
 	
-	User selectedUser;
 	
-	// Implemented button
+	
 	@FXML
-//	private Button logoutBtn;
+    private Button questionBtn;
 
-<<<<<<< Updated upstream
-=======
+    @FXML
+    private Button viewArticlesBtn;
+
+    @FXML
+    private AnchorPane questionPane;
+
+    @FXML
+    private ComboBox<String> questionTypeMenu;
+
+    @FXML
+    private TextArea questionTextArea;
+
+    @FXML
+    private Button sendButton;
+		
+	@FXML
+	private Button logoutBtn;
+
 	User selectedUser;
 	core.databaseInterface dbMan;
 	
@@ -37,7 +59,7 @@ public class UserPageController {
     
 		questionTypeMenu.getItems().addAll("General Help", "Specific Help");
 	
-		dbMan = Source.getDatabase();
+		dbMan = new core.databaseInterface();
 	
 	}
 
@@ -126,7 +148,6 @@ public class UserPageController {
     }
 
    
->>>>>>> Stashed changes
 	// Logout Button implementation. Logs user out of system.
 	@FXML
     private void handleLogout() {

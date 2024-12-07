@@ -26,7 +26,6 @@ import core.EncryptionUtils;
  */
 public class BackupManager {
     private databaseInterface dbMan;
-    private EncryptionHelper encryptionHelper;
 
     /**
      * Constructs a new BackupManager with the given DatabaseManager.
@@ -36,7 +35,6 @@ public class BackupManager {
      */
     public BackupManager(databaseInterface dbMan) throws Exception {
         this.dbMan = dbMan;
-        this.encryptionHelper = new EncryptionHelper();
     }
     
     /**

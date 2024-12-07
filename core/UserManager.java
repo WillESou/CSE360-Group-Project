@@ -311,6 +311,10 @@ public class UserManager {
     	this.dbInterface = Source.getDatabase();
     }
     
+    public UserManager(databaseInterface database) {
+    	this.dbInterface = database;
+    }
+    
     public databaseInterface getDatabaseInterface() {
     	return dbInterface;
     }

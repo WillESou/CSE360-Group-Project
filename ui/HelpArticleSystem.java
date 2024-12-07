@@ -78,6 +78,20 @@ public class HelpArticleSystem{
 		}
     }
     
+    public HelpArticleSystem(databaseInterface database) {
+    	
+    	// Initialize database and backup managers
+    	altFile = false;
+    	
+    	try {
+			dbMan = database;
+			backupMan = new BackupManager(dbMan);
+			userMan = new UserManager(database);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+    }
+    
     /**
      * The main entry point for the JavaFX application.
      * 
