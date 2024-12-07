@@ -22,6 +22,10 @@ public class DatabaseInterfaceTest {
         // Get connection for test setup
         connection = databaseInterface.getConnection();
         
+        
+        cleanupDatabase();
+        
+
         // Create an instance of UserManager
         userMan = new UserManager();
         
@@ -36,19 +40,32 @@ public class DatabaseInterfaceTest {
         insertTestUser();
     }
 
+
+
+    
+    
+    
+    
     @After
-    public void tearDown() throws Exception {
-        // Clean up tables
-        try (Statement stmt = connection.createStatement()) {
-            stmt.execute("DROP ALL OBJECTS");
-        }
-        
+    public void tearDown() throws Exception { 
+      
+      
+        cleanupDatabase();
         // Close the connection
         if (connection != null && !connection.isClosed()) {
             connection.close();
         }
     }
 
+
+    private void cleanupDatabase() throws SQLException {
+        try (Statement stmt = connection.createStatement()) {
+            // Drop all objects in the test database
+            stmt.execute("DROP ALL OBJECTS");
+        }
+    }
+
+   
     private void createTables() throws SQLException {
         try (Statement stmt = connection.createStatement()) {
             // Create ROLES table first since it's referenced by USER_ROLES
@@ -112,6 +129,28 @@ public class DatabaseInterfaceTest {
         }
     }
 
+
+    
+    private void insertTestArticle() throws SQLException {
+    	Article testArticle = new Article(
+    			"Test Title".toCharArray(),
+    	        "Test Author".toCharArray(),
+    	        "Test Abstract".toCharArray(),
+    	        "Test Keywords".toCharArray(),
+    	        "Sensitive Content".toCharArray(),
+    	        "Test References".toCharArray(),
+    	        "General".toCharArray()
+    			);
+    	
+    	try {
+			dbInterface.addArticle(testArticle);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
+    }
+    
     private void insertTestUser() throws SQLException {
         if (userMan.getUserByUsername("testuser") == null) {
             userMan.createUser("testuser", "test@asu.edu", "test", "test");
@@ -211,5 +250,6 @@ public class DatabaseInterfaceTest {
 	            return 0;
 	        }
 	    }
+
 }
 

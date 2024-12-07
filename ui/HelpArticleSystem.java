@@ -122,6 +122,7 @@ public class HelpArticleSystem{
         Button searchButton = createStylizedButton("SEARCH");
         Button deleteAllArticlesButton = createStylizedButton("ERASE ALL ARTICLES");
         Button quitButton = createStylizedButton("EXIT");
+       
         
         addButton.setOnAction(e -> showArticleCreationScreen());
         displayButton.setOnAction(e -> displaySelectedArticle());
@@ -151,7 +152,6 @@ public class HelpArticleSystem{
         }
         else if(currentUser.hasRole(ROLE.INSTRUCTOR)) {
             buttonBox.getChildren().addAll(displayButton, deleteButton, deleteAllArticlesButton, refreshButton, backupButton, restoreButton, openButton, searchButton, quitButton);
-
         }
         else if(currentUser.hasRole(ROLE.STUDENT))
         {
@@ -452,6 +452,7 @@ public class HelpArticleSystem{
 			}
 		});
         
+
         Button resetFile = createStylizedButton("Restore Original File");
         resetFile.setOnAction(e -> {
         	try {
@@ -468,14 +469,16 @@ public class HelpArticleSystem{
 				e1.printStackTrace();
 			}
         });
-        
+
         if(currentUser.hasRole(ROLE.ADMIN)) {
             searchBox.getChildren().setAll(new Label("SEARCH BY KEYWORD:"), searchField, searchButton, chooseGroup, createGroup);
 
         }
         else if(currentUser.hasRole(ROLE.INSTRUCTOR)) {
 
+
             searchBox.getChildren().setAll(new Label("SEARCH BY KEYWORD:"), searchField, searchButton, chooseGroup, createGroup);
+
         }
         else if(currentUser.hasRole(ROLE.STUDENT))
         {

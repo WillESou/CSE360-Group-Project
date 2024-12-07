@@ -44,7 +44,7 @@ public class databaseInterface {
 	private static String jdbcURL = "jdbc:h2:./programDatabase";
 	private static String username = "sa";
 	private static String password = "pass";
-	
+
 	// Add constructor that allows for test configuration
     public databaseInterface(String jdbcURL, String username, String password) {
         databaseInterface.jdbcURL = jdbcURL;
@@ -61,15 +61,17 @@ public class databaseInterface {
     
     // Default constructor for production use
     public databaseInterface() {
+
     	
-    	this("jdbc:h2:./Database/programDatabase", "sa", "pass");
+ 
     	
     	if (new File("Database/programDatabase.mv.db").exists()) {
     		System.out.println("H2 Database File Exists");
     		return;
     	}
-        
-        try(Connection connection = DriverManager.getConnection(jdbcURL, username, password)) {
+      this("jdbc:h2:./Database/programDatabase", "sa", "pass");
+      
+      try(Connection connection = DriverManager.getConnection(jdbcURL, username, password)) {
 			System.out.println("Connection to H2 database successful");
 			
 			//Creating all user tables
@@ -104,6 +106,7 @@ public class databaseInterface {
 			}
     }
 	
+
     // Function to implement database functions into a new file.
 	public void newConnection(String filename) throws SQLException {
 		
@@ -140,8 +143,7 @@ public class databaseInterface {
 		createSessionTable(connection);
 		createSessionStudentsTable(connection);
 	}
-	
-	
+
 	
 	public static Connection getConnection() throws SQLException {
 	        if (connection == null || connection.isClosed()) {
@@ -175,11 +177,6 @@ public class databaseInterface {
 			createUserSkillsTable(connection);
 			createArticleTables(connection);
 
-			createGroupTable(connection);
-			createGenArticlesTable(connection);
-
-
-			createInviteCodesTable(connection);
 
             
 			//Creating questions tables
@@ -312,6 +309,7 @@ public class databaseInterface {
     }
     
     
+
     void createGeneralQuestionsTable(Connection conn) throws SQLException {
     	String sql = "CREATE TABLE IF NOT EXISTS GENERAL_QUESTIONS (" +
     				 "QUESTION_ID INT, " +
@@ -325,7 +323,9 @@ public class databaseInterface {
     	executeUpdate(conn, sql, "GENERAL_QUESTIONS table");
     }
     
+
     void createSpecificQuestionsTable(Connection conn) throws SQLException {
+
     	String sql = "CREATE TABLE IF NOT EXISTS SPECIFIC_QUESTIONS (" +
     				 "QUESTION_ID INT, " +
     				 "STUDENT_ID INT, " +
@@ -562,11 +562,13 @@ public class databaseInterface {
      */
     public List<Article> getAllArticles() throws Exception {
         List<Article> articles = new ArrayList<>();
-        String sql = "SELECT id, title, authors FROM help_articles";
+        String sql = "SELECT id, title, authors, abstract, keywords, body, references FROM help_articles";
         try (Statement stmt = getConnection().createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
+
                 Article nArticle = getArticle(rs.getInt("id"));
+
                 articles.add(nArticle);
             }
         }
